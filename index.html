@@ -1,0 +1,999 @@
+<!doctype html>
+<html lang="en">
+<head><link rel="icon" type="image/x-icon" href="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" />
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>School Attendance by Induwara Jayasinghe</title>
+
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="School Attendance Database by Induwara Jayasinghe">
+  <meta name="description" content="A modern school attendance management system built by Induwara P. Jayasinghe. Track classes, students, and reports seamlessly.">
+  <meta name="author" content="Induwara P. Jayasinghe">
+  <meta name="keywords" content="School Attendance, Student Management, Induwara Jayasinghe, Class Tracker, Education App">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://clidder.netlify.app/"> <!-- Replace with your live site URL -->
+  <meta property="og:title" content="School Attendance by Induwara Jayasinghe">
+  <meta property="og:description" content="Track attendance, manage classes, and generate reports with ease.">
+  <meta property="og:image" content="https://i.ibb.co/rRQTK6Lb/logo-black-hat-tools.png"> <!-- Share preview image -->
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://clidder.netlify.app/"> <!-- Replace with your live site URL -->
+  <meta name="twitter:title" content="School Attendance by Induwara Jayasinghe">
+  <meta name="twitter:description" content="A smart and scalable attendance system designed by Induwara P. Jayasinghe.">
+  <meta name="twitter:image" content="https://i.ibb.co/rRQTK6Lb/logo-black-hat-tools.png">
+
+  <!-- Extra -->
+  <meta name="theme-color" content="#6366f1">
+  <link rel="canonical" href="https://clidder.netlify.app/">
+
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PapaParse for robust CSV parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    :root{ --bg:#ffffff; --muted:#6b7280; --card:#ffffff; --accent:#6366f1; }
+    html,body,#app{height:100%}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;background:var(--bg);color:#0f172a}
+    body::before{
+      content:''; position:fixed; inset:0; z-index:-20; background-image:url('https://i.ibb.co/840yZ5qQ/bgp.png'); background-size:cover; background-position:center; filter: saturate(1) contrast(0.95); transform: scale(1.02);
+    }
+    .mica{ background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.64)); box-shadow: 0 8px 24px rgba(15,23,42,0.08); backdrop-filter: blur(10px) saturate(120%); border-radius:1rem; }
+    @media (max-width:900px){ .desktop-cols{ flex-direction:column; } .w-96{ width:100% !important; } }
+    input::placeholder, textarea::placeholder, select:invalid{ color: var(--muted); opacity: 1; }
+    input, textarea, select{ color:#0f172a !important; background:#ffffff !important; position: relative; z-index: 1; }
+    input, textarea { caret-color: #0f172a; }
+    /* Toasts */
+    #toastContainer{ position: fixed; right: 16px; bottom: 16px; z-index: 10000; display:flex; flex-direction:column; gap:8px; }
+
+
+/* === Pure Orange Thin Scrollbar === */
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 6px;              /* thin vertical scrollbar */
+  height: 6px;             /* thin horizontal scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* no background */
+}
+
+::-webkit-scrollbar-thumb {
+  background: orange;      /* pure orange thumb */
+  border-radius: 10px;     /* rounded edges */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: darkorange;  /* slightly darker on hover */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: orange transparent;
+}
+
+
+#downloadFile {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+
+
+  </style>
+</head>
+<body>
+
+
+<!-- Splash Screen -->
+<div id="splashScreen" style="
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: #f9fafb; /* Light background */
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.6s ease;
+">
+  <img src="https://i.ibb.co/rRQTK6Lb/logo-black-hat-tools.png" alt="Clidder Logo" style="width: 110px; height: 110px;" />
+  <div style="position: absolute; bottom: 40px; text-align: center; font-family: 'Helvetica Neue', sans-serif; font-size: 1rem; font-weight: 600; line-height: 1.4;">
+    <div style="color: #374151;">from</div>
+    <div style="background: linear-gradient(90deg, #6366f1, #FF7D1E, #ec4899); -webkit-background-clip: text; color: transparent; -webkit-text-fill-color: transparent;">
+      INDUWARA JAYASINGHE
+    </div>
+  </div>
+</div>
+
+
+  <div id="app" class="min-h-screen p-4 md:p-6 flex flex-col gap-6">
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+      <div onclick="window.open('http://induwarajayasinghe.netlify.app/', '_blank')" 
+     class="bg-white p-6 rounded-lg shadow flex flex-col sm:flex-row items-center gap-4 cursor-pointer hover:shadow-lg transition">
+  
+  <!-- Logo -->
+  <img src="https://i.ibb.co/rRQTK6Lb/logo-black-hat-tools.png" 
+       alt="School Logo" 
+       class="w-16 h-16 object-contain">
+
+  <!-- Text -->
+  <div class="text-center sm:text-left">
+    <h1 class="text-2xl font-semibold text-slate-800">
+      Sir John Kothalawala Maha Vidyalaya - School Attendance
+    </h1>
+    <p class="text-sm font-medium text-orange-500 mt-1">
+      Conceptualized, designed, and developed by 
+      <span class="font-semibold">Induwara P. Jayasinghe</span> 
+      with a focus on clean code, scalable architecture, and seamless user experiences across devices.
+    </p>
+  </div>
+</div>
+
+
+
+      <div class="flex gap-2 flex-wrap">
+        <button id="downloadFile" class="px-3 py-2 bg-slate-100 rounded">Download HTML</button>
+        <button id="downloadAnalysis" class="px-3 py-2 bg-slate-100 rounded">Download Analysis CSV</button>
+      </div>
+    </header>
+
+    <main class="flex desktop-cols gap-6">
+      <!-- Left column: management -->
+      <aside class="w-96 mica p-4 flex-shrink-0">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-medium">Class & Students</h2>
+              <p class="text-xs text-slate-600">Create classes, add students, bulk import</p>
+            </div>
+            <div class="text-xs text-slate-600">Classes: <span id="classCount">0</span></div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-2">
+            <input id="className" placeholder="Class name (e.g., Grade 10A)" class="border rounded px-3 py-2" />
+            <input id="subjectName" placeholder="Subject (e.g., Biology)" class="border rounded px-3 py-2" />
+            <div class="flex gap-2">
+              <button id="addClassBtn" class="flex-1 px-3 py-2 bg-indigo-600 text-white rounded">Add Class</button>
+              <button id="clearClassBtn" class="px-3 py-2 bg-white border rounded">Clear</button>
+            </div>
+          </div>
+
+          <hr/>
+
+          <div>
+            <h3 class="text-sm font-medium">Students</h3>
+            <p class="text-xs text-slate-600">Add students to the selected class. Each student has a unique Student ID (digits and `_` only).</p>
+          </div>
+
+          <div class="overflow-y-auto" style="max-height:28vh">
+            <ul id="studentList" class="space-y-2"></ul>
+          </div>
+
+          <div class="mt-2 p-2 bg-slate-50 rounded text-sm">
+            👧 Girls: <span id="totalGirls">0</span> • 👦 Boys: <span id="totalBoys">0</span><br>
+            📊 Total (Girls+Boys): <span id="totalStudents">0</span> • Average: <span id="avgStudents">0</span>
+          </div>
+
+          <form id="studentForm" class="grid grid-cols-1 gap-2">
+            <input id="studentId" placeholder="Student ID (numbers/_ only, auto if empty)" class="border rounded px-3 py-2" />
+            <input id="studentName" placeholder="Student full name" class="border rounded px-3 py-2" required />
+            <input id="studentRoll" placeholder="Roll number / ID (optional)" class="border rounded px-3 py-2" />
+            <input id="studentAddress" placeholder="Address" class="border rounded px-3 py-2" />
+            <select id="studentGender" class="border rounded px-3 py-2">
+              <option value="" selected>Select gender (optional)</option>
+              <option value="girl">Girl</option>
+              <option value="boy">Boy</option>
+            </select>
+            <div class="grid grid-cols-2 gap-2">
+              <input id="motherMobile" placeholder="Mother's mobile" class="border rounded px-3 py-2" />
+              <input id="fatherMobile" placeholder="Father's mobile" class="border rounded px-3 py-2" />
+            </div>
+            <div class="flex gap-2">
+              <button id="addStudentBtn" type="submit" class="flex-1 px-3 py-2 bg-green-600 text-white rounded">Add Student</button>
+              <button id="importCsvBtn" type="button" class="px-3 py-2 bg-white border rounded">Import CSV/JSON</button>
+              <input id="importCsvFile" type="file" accept="text/csv,application/json" class="hidden" />
+            </div>
+          </form>
+
+          <div class="text-xs text-slate-600">Tap a student to edit; delete removes attendance also.</div>
+        </div>
+      </aside>
+
+      <!-- Right column: attendance and reports -->
+      <section class="flex-1 mica p-4 flex flex-col gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div>
+            <label class="text-xs">Class</label>
+            <select id="selectClass" class="border rounded px-3 py-2 w-full"></select>
+          </div>
+
+          <div>
+            <label class="text-xs">Date</label>
+            <input id="attendanceDate" type="date" class="border rounded px-3 py-2 w-full" />
+          </div>
+
+          <div>
+            <label class="text-xs">Teacher</label>
+            <input id="teacherName" placeholder="Teacher name (optional)" class="border rounded px-3 py-2 w-full" />
+          </div>
+
+          <div>
+            <label class="text-xs">Mode</label>
+            <select id="attendanceMode" class="border rounded px-3 py-2 w-full">
+              <option value="in-class">In-class</option>
+              <option value="online">Online</option>
+              <option value="field">Field</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="markAllPresent" class="px-3 py-2 bg-green-500 text-white rounded flex-1">All Present</button>
+          <button id="markAllAbsent" class="px-3 py-2 bg-red-500 text-white rounded flex-1">All Absent</button>
+          <button id="saveAttendance" class="px-3 py-2 bg-indigo-600 text-white rounded flex-1">Save Attendance</button>
+        </div>
+
+        <div id="attendanceArea" class="overflow-auto border rounded" style="min-height:260px; max-height:50vh"></div>
+
+        <div class="grid grid-cols-3 gap-3 mt-2">
+          <div class="p-3 rounded bg-green-50">Present: <span id="sumPresent" class="font-semibold">0</span></div>
+          <div class="p-3 rounded bg-red-50">Absent: <span id="sumAbsent" class="font-semibold">0</span></div>
+          <div class="p-3 rounded bg-yellow-50">Late: <span id="sumLate" class="font-semibold">0</span></div>
+        </div>
+
+        <div class="p-3 bg-slate-100 rounded text-sm">
+          📅 Daily Totals → 👧 Girls Present: <span id="dailyGirls">0</span> • 👦 Boys Present: <span id="dailyBoys">0</span> • 📊 Total Present: <span id="dailyTotal">0</span> • Average: <span id="dailyAvg">0</span>
+        </div>
+
+        <hr/>
+
+        <div class="flex flex-col md:flex-row gap-3 md:items-center">
+          <div class="flex items-center gap-2">
+            <label class="text-sm">Reports</label>
+            <select id="reportRange" class="border rounded px-3 py-2">
+              <option value="today">Today</option>
+              <option value="7days">Last 7 days</option>
+              <option value="30days">Last 30 days</option>
+              <option value="term">This Term</option>
+            </select>
+            <button id="generateReport" class="px-3 py-2 bg-white border rounded">Generate</button>
+          </div>
+
+          <div class="ml-auto flex gap-2">
+            <button id="exportJson" class="px-3 py-2 bg-white border rounded">Export JSON</button>
+            <button id="exportCsv" class="px-3 py-2 bg-white border rounded">Export CSV</button>
+          </div>
+        </div>
+
+        <div id="reportArea" class="mt-2 overflow-auto" style="max-height:22vh"></div>
+
+        <hr/>
+        <div>
+          <h3 class="font-medium">Register (bulk entries)</h3>
+          <p class="text-xs text-slate-600">Add or paste many attendance records (CSV or JSON). Use PapaParse-friendly CSV with headers or JSON array.</p>
+          <textarea id="registerInput" placeholder="Paste CSV rows like: date,roll,status (e.g. 2025-09-19,12,present) or JSON array" class="w-full border rounded p-3 mt-2" style="min-height:120px"></textarea>
+          <div class="flex gap-2 mt-2">
+            <button id="applyRegister" class="px-3 py-2 bg-indigo-600 text-white rounded">Apply Register</button>
+            <button id="clearRegister" class="px-3 py-2 bg-white border rounded">Clear</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+   <footer class="bg-slate-900 text-white p-8 mt-8" style="border-radius:10px;">
+  <div class="max-w-6xl mx-auto flex flex-col gap-8">
+
+    <!-- About -->
+    <div class="text-center">
+      <h2 class="text-xl font-bold tracking-wide">Induwara Jayasinghe</h2>
+      <p class="text-sm opacity-80 mt-2 leading-relaxed max-w-3xl mx-auto">
+        Founder & CEO of <span class="font-semibold">Black Hat Inc, Clidder LLC, Cllipora LLC, BH Developers, and C Shot LLC</span>.<br>
+        Visionary entrepreneur and tech innovator dedicated to excellence, innovation, 
+        and empowering communities through technology.
+      </p>
+    </div>
+<center>Let's Collaborate</center>
+    <!-- Social grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-5 max-w-5xl w-full mx-auto">
+      
+      <a href="https://t.me/induwarapjayasinghe" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-telegram-plane text-blue-400 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">Telegram</span>
+      </a>
+
+      <a href="https://github.com/J-M-INDUWARA-P-JAYASINGHE" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-github text-gray-300 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">GitHub</span>
+      </a>
+
+      <a href="https://lk.linkedin.com/in/induwara-jayasinghe" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-linkedin-in text-blue-500 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">LinkedIn</span>
+      </a>
+
+      <a href="https://whatsapp.com/channel/0029Vb6NS7GKGGGKLui7cE0N" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-whatsapp text-green-500 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">WhatsApp</span>
+      </a>
+
+      <a href="https://clidder.netlify.app/" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <img src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" alt="Clidder" class="w-6 h-6" />
+        <span class="font-semibold text-lg text-gray-200">Clidder</span>
+      </a>
+
+      <a href="https://www.facebook.com/profile.php?id=61575061977120" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-facebook-f text-blue-600 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">Facebook</span>
+      </a>
+
+      <a href="https://x.com/JPM_INDUWARA" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-x-twitter text-white text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">X</span>
+      </a>
+
+      <a href="https://www.youtube.com/@INDUWARAPJAYASINGHE" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-youtube text-red-600 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">YouTube</span>
+      </a>
+
+      <a href="https://www.instagram.com/induwara_p_jayasinghe/#" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-instagram text-pink-500 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">Instagram</span>
+      </a>
+
+      <a href="https://pin.it/6Cq2oliNP" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-pinterest-p text-red-500 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">Pinterest</span>
+      </a>
+
+      <a href="https://www.threads.net/@induwara_p_jayasinghe" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-threads text-white text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">Threads</span>
+      </a>
+
+      <a href="http://tiktok.com/@induwarapjayasinghe" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-tiktok text-white text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">TikTok</span>
+      </a>
+    </div>
+
+    <!-- Bottom note -->
+    <div class="text-center text-xs opacity-70 mt-6">
+      <p>© 2019–2025 Black Hat Developers. All rights reserved.</p>
+      <p class="mt-1">
+        Designed and developed with ❤️ by 
+        <a href="mailto:jmp.induwarapjayasinghe@gmail.com" class="text-gray-300 hover:text-indigo-400 underline">
+          Induwara P. Jayasinghe
+        </a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </div>
+
+  <!-- Toast container (non-blocking) -->
+  <div id="toastContainer" aria-live="polite"></div>
+
+  <script type="module">
+    // ---------- Firebase imports ----------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      setDoc,
+      getDocs,
+      doc,
+      deleteDoc,
+      query,
+      where,
+      onSnapshot,
+      writeBatch,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    // ---------- Firebase config ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyDrFdwYhlj84GQ3eLzPctLgxZ572PHu7Tg",
+      authDomain: "x-clone-d4697.firebaseapp.com",
+      projectId: "x-clone-d4697",
+      storageBucket: "x-clone-d4697.firebasestorage.app",
+      messagingSenderId: "438425139174",
+      appId: "1:438425139174:web:b1ebea6f124a245cf9c827",
+      measurementId: "G-PLQBYNDKQM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    try{ getAnalytics(app); }catch(e){}
+    const db = getFirestore(app);
+
+    // ---------- Helpers & state ----------
+    const el = id => document.getElementById(id);
+    const fmtDate = d => (new Date(d)).toISOString().split('T')[0];
+    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function toast(msg, timeout=3500){
+      const container = el('toastContainer');
+      const div = document.createElement('div');
+      div.className = 'px-4 py-2 bg-slate-800 text-white rounded shadow';
+      div.textContent = msg;
+      container.appendChild(div);
+      setTimeout(()=> div.classList.add('fade-out'), timeout-300);
+      setTimeout(()=> div.remove(), timeout);
+    }
+
+    let classesCache = [];
+    let studentsCache = [];
+    let selectedClassId = null;
+
+    // ---------- Utility functions ----------
+    function isValidStudentId(id){ return /^[0-9_]+$/.test(id); }
+    function escapeCsv(v){ return '"' + String(v||'').replace(/"/g,'""') + '"'; }
+
+    async function checkDuplicateStudentId(studentId, excludeDocId = null){
+      if(!studentId) return false;
+      const q = query(collection(db,'students'), where('studentId','==', studentId));
+      const snap = await getDocs(q);
+      if(snap.empty) return false;
+      if(excludeDocId){
+        return snap.docs.some(d => d.id !== excludeDocId);
+      }
+      return true;
+    }
+
+    async function generateUniqueStudentId(){
+      for(let i=0;i<100;i++){
+        const candidate = String(Math.floor(Math.random()*900000) + 100000);
+        if(!await checkDuplicateStudentId(candidate)) return candidate;
+      }
+      return '_' + Math.random().toString(36).slice(2,10);
+    }
+
+    // ---------- Classes ----------
+    el('addClassBtn').addEventListener('click', async ()=> {
+      const name = el('className').value.trim(); const subject = el('subjectName').value.trim();
+      if(!name) return toast('Enter class name');
+      try{
+        await addDoc(collection(db,'classes'), { name, subject, createdAt: serverTimestamp() });
+        el('className').value=''; el('subjectName').value='';
+        toast('Class added');
+      }catch(err){ console.error(err); toast('Add class failed: '+err.message); }
+    });
+    el('clearClassBtn').addEventListener('click', ()=>{ el('className').value=''; el('subjectName').value=''; });
+
+    function startClassesListener(){
+      onSnapshot(collection(db,'classes'), snap => {
+        classesCache = snap.docs.map(d=> ({ id: d.id, ...d.data() }));
+        renderClassSelector();
+      }, err => { console.error('classes listen', err); toast('Classes listener error'); });
+    }
+
+    function renderClassSelector(){
+      const sel = el('selectClass'); sel.innerHTML = '<option value="">— Select class —</option>';
+      classesCache.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name}${c.subject? ' — '+c.subject : ''}`; sel.appendChild(o); });
+      el('classCount').textContent = classesCache.length;
+    }
+
+    el('selectClass').addEventListener('change', async (e)=>{ selectedClassId = e.target.value || null; resetStudentForm(); if(!selectedClassId){ studentsCache=[]; renderStudents(); renderAttendanceForSelectedDate(); return; } await loadStudentsForClass(selectedClassId); });
+
+    // ---------- Students ----------
+    async function loadStudentsForClass(classId){
+      try{
+        const q = query(collection(db,'students'), where('classId','==', classId));
+        const snap = await getDocs(q);
+        studentsCache = snap.docs.map(d=> ({ id: d.id, ...d.data() }));
+        studentsCache.sort((a,b)=> (String(a.roll||'')).localeCompare(String(b.roll||'')) || a.name.localeCompare(b.name));
+        renderStudents();
+        await renderAttendanceForSelectedDate();
+      }catch(err){ console.error(err); toast('Load students failed: '+err.message); }
+    }
+
+    function renderStudents(){
+      const ul = el('studentList'); ul.innerHTML='';
+      if(!studentsCache.length){ ul.innerHTML = '<li class="p-2 text-slate-500">No students — add or import</li>';
+        el('totalGirls').textContent = 0; el('totalBoys').textContent = 0; el('totalStudents').textContent = 0; el('avgStudents').textContent = 0; return; }
+
+      const girls = studentsCache.filter(s => String(s.gender||'').toLowerCase() === 'girl');
+      const boys  = studentsCache.filter(s => String(s.gender||'').toLowerCase() === 'boy');
+      const unspecified = studentsCache.filter(s => !s.gender || (String(s.gender||'').toLowerCase() !== 'girl' && String(s.gender||'').toLowerCase() !== 'boy'));
+
+      function appendGroup(title, arr){
+        if(!arr.length) return;
+        const header = document.createElement('li');
+        header.className = 'font-semibold mt-2';
+        header.textContent = title;
+        ul.appendChild(header);
+        for(const s of arr){
+          const li = document.createElement('li');
+          li.className='flex items-center justify-between p-2 border rounded';
+          const phones = [s.motherMobile, s.fatherMobile].filter(Boolean).join(', ');
+          li.innerHTML = `<div><div class="font-medium">${escapeHtml(s.name)} <span class="text-xs text-slate-500">(${escapeHtml(s.studentId||'')})</span></div><div class="text-xs text-slate-600">Roll: ${escapeHtml(s.roll||'—')} • ${escapeHtml(s.address||'')}</div><div class="text-xs text-slate-600">Parents: ${escapeHtml(phones||'—')}</div></div><div class="flex gap-2"><button data-id="${s.id}" class="editBtn px-2 py-1 text-sm bg-slate-100 rounded">Edit</button><button data-id="${s.id}" class="delBtn px-2 py-1 text-sm bg-red-50 rounded">Delete</button></div>`;
+          ul.appendChild(li);
+        }
+      }
+
+      appendGroup('👧 Girls', girls);
+      appendGroup('👦 Boys', boys);
+      if(unspecified.length) appendGroup('❓ Unspecified', unspecified);
+
+      ul.querySelectorAll('.editBtn').forEach(b=> b.addEventListener('click', e=> startEditStudent(e.target.dataset.id)));
+      ul.querySelectorAll('.delBtn').forEach(b=> b.addEventListener('click', e=> deleteStudent(e.target.dataset.id)));
+
+      el('totalGirls').textContent = girls.length;
+      el('totalBoys').textContent = boys.length;
+      const totalGB = girls.length + boys.length;
+      el('totalStudents').textContent = totalGB;
+      el('avgStudents').textContent = classesCache.length>0? (totalGB/classesCache.length).toFixed(1) : 0;
+    }
+
+    function startEditStudent(id){
+      const s = studentsCache.find(x=>x.id===id);
+      if(!s) return;
+      el('studentId').value = s.studentId||'';
+      el('studentName').value = s.name;
+      el('studentRoll').value = s.roll||'';
+      el('studentAddress').value = s.address||'';
+      el('studentGender').value = s.gender || '';
+      el('motherMobile').value = s.motherMobile||'';
+      el('fatherMobile').value = s.fatherMobile||'';
+      el('addStudentBtn').textContent='Save';
+      el('addStudentBtn').dataset.editId = id;
+      el('studentName').focus();
+    }
+
+    async function deleteStudent(id){
+      const s = studentsCache.find(x=>x.id===id);
+      if(!s) return;
+      if(!confirm('Delete student and attendance?')) return;
+      try{
+        await deleteDoc(doc(db,'students', id));
+        // delete attendance for student using studentId (custom)
+        if(s.studentId){
+          const snap = await getDocs(query(collection(db,'attendance'), where('studentId','==', s.studentId)));
+          if(!snap.empty){
+            const batch = writeBatch(db);
+            snap.docs.forEach(d=> batch.delete(doc(db,'attendance', d.id)));
+            await batch.commit();
+          }
+        }
+        toast('Deleted');
+        await loadStudentsForClass(selectedClassId);
+      }catch(err){ console.error(err); toast('Delete failed: '+err.message); }
+    }
+
+    // ---------- Add / Edit Student form ----------
+    el('studentForm').addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      if(!selectedClassId) return toast('Select a class first');
+
+      const editId = el('addStudentBtn').dataset.editId || null;
+
+      let sid = el('studentId').value.trim();
+      if(!sid){
+        sid = await generateUniqueStudentId();
+      }
+
+      if(!isValidStudentId(sid)) return toast('Invalid ID — only digits and underscore (_) allowed.');
+
+      // uniqueness check
+      if(await checkDuplicateStudentId(sid, editId)) return toast('Student ID already in use');
+
+      const name = el('studentName').value.trim();
+      const roll = el('studentRoll').value.trim();
+      const address = el('studentAddress').value.trim();
+      const gender = el('studentGender').value;
+      const mother = el('motherMobile').value.trim();
+      const father = el('fatherMobile').value.trim();
+      if(!name) return toast('Enter name');
+
+      try{
+        if(editId){
+          await setDoc(doc(db,'students', editId), { studentId: sid, name, roll, address, gender, motherMobile: mother, fatherMobile: father, classId: selectedClassId });
+          delete el('addStudentBtn').dataset.editId;
+          el('addStudentBtn').textContent='Add Student';
+        } else {
+          await addDoc(collection(db,'students'), { studentId: sid, name, roll, address, gender, motherMobile: mother, fatherMobile: father, classId: selectedClassId });
+        }
+        resetStudentForm();
+        await loadStudentsForClass(selectedClassId);
+        toast('Student saved');
+      }catch(err){ console.error(err); toast('Save failed: '+err.message); }
+    });
+
+    function resetStudentForm(){
+      el('studentForm').reset();
+      el('addStudentBtn').textContent='Add Student';
+      delete el('addStudentBtn').dataset.editId;
+    }
+
+    // CSV/JSON import (students) - uses PapaParse for robust parsing
+    el('importCsvBtn').addEventListener('click', ()=> el('importCsvFile').click());
+    el('importCsvFile').addEventListener('change', async (ev)=>{
+      const f = ev.target.files[0]; if(!f) return; if(!selectedClassId) return toast('Choose class first');
+      const txt = await f.text();
+
+      if(f.type.includes('json') || f.name.endsWith('.json')){
+        try{
+          const parsed = JSON.parse(txt);
+          if(Array.isArray(parsed)){
+            let added=0, skipped=0;
+            for(const r of parsed){
+              let sid = (r.studentId||'').toString().trim();
+              if(!sid) sid = await generateUniqueStudentId();
+              if(!isValidStudentId(sid) || await checkDuplicateStudentId(sid)) { skipped++; continue; }
+              await addDoc(collection(db,'students'), { studentId: sid, name: (r.name||'').trim(), roll: (r.roll||'').trim(), address: (r.address||'').trim(), gender: (r.gender||'').trim(), motherMobile: (r.motherMobile||'').trim(), fatherMobile: (r.fatherMobile||'').trim(), classId: selectedClassId });
+              added++;
+            }
+            toast(`Imported JSON — added ${added}, skipped ${skipped}`);
+            await loadStudentsForClass(selectedClassId);
+            ev.target.value = '';
+            return;
+          }
+        } catch(e){ toast('Invalid JSON'); ev.target.value = ''; return; }
+      }
+
+      // CSV parsing via PapaParse (handles quotes, commas)
+      const parsed = Papa.parse(txt.trim(), { header: true, skipEmptyLines: true });
+      if(parsed.errors && parsed.errors.length){
+        console.warn('CSV parse errors', parsed.errors);
+      }
+      const rows = parsed.data;
+      if(rows.length === 0) return toast('Empty CSV');
+      let added=0, skipped=0;
+      for(const r of rows){
+        const name = (r.name||'').trim(); if(!name) continue;
+        let sid = (r.studentId||'').toString().trim();
+        if(!sid) sid = await generateUniqueStudentId();
+        if(!isValidStudentId(sid) || await checkDuplicateStudentId(sid)) { skipped++; continue; }
+        await addDoc(collection(db,'students'), { studentId: sid, name, roll: (r.roll||'').trim(), address: (r.address||'').trim(), gender: (r.gender||'').trim(), motherMobile: (r.motherMobile||'').trim(), fatherMobile: (r.fatherMobile||'').trim(), classId: selectedClassId });
+        added++;
+      }
+      toast(`CSV import complete — added ${added}, skipped ${skipped}`);
+      await loadStudentsForClass(selectedClassId);
+      ev.target.value = '';
+    });
+
+    // ---------- Attendance ----------
+    function makeAttendanceRow(s, status='absent'){
+      const wrapper = document.createElement('div'); wrapper.className='flex items-center gap-3 p-2 border-b';
+      const sid = s.studentId || '';
+      const phones = [s.motherMobile, s.fatherMobile].filter(Boolean).join(', ');
+      wrapper.innerHTML = `<div class="w-16 text-sm text-slate-600">${escapeHtml(s.roll||'')}</div><div class="flex-1"><div class="font-medium">${escapeHtml(s.name)}</div><div class="text-xs text-slate-600">ID: ${escapeHtml(sid)} ${phones? ' • ' + escapeHtml(phones): ''}</div></div><div class="flex items-center gap-3"><label class="flex items-center gap-1"><input type="radio" name="att-${sid}" value="present"> Present</label><label class="flex items-center gap-1"><input type="radio" name="att-${sid}" value="absent"> Absent</label><label class="flex items-center gap-1"><input type="radio" name="att-${sid}" value="late"> Late</label></div>`;
+      const checked = wrapper.querySelector(`input[name="att-${sid}"][value="${status}"]`);
+      if(checked) checked.checked = true;
+      else {
+        const def = wrapper.querySelector(`input[name="att-${sid}"][value="absent"]`);
+        if(def) def.checked = true;
+      }
+      return wrapper;
+    }
+
+    async function renderAttendanceForSelectedDate(){
+      if(!selectedClassId){ el('attendanceArea').innerHTML = '<div class="p-3 text-slate-500">Select a class</div>'; return; }
+      const date = el('attendanceDate').value || fmtDate(new Date());
+      el('attendanceDate').value = date;
+      if(!studentsCache || studentsCache.length===0) await loadStudentsForClass(selectedClassId);
+      const area = el('attendanceArea'); area.innerHTML='';
+
+      try{
+        // ---- CHANGED: query by DATE only, then filter by classId (avoids composite-index requirement) ----
+        const q = query(collection(db,'attendance'), where('date','==', date));
+        const snap = await getDocs(q);
+        const rows = snap.docs.map(d=> ({ id: d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+        const map = new Map();
+        rows.forEach(r => { if(r && r.studentId) map.set(r.studentId, r); });
+        // -----------------------------------------------------------------------------------------------
+
+        // group students by gender
+        const girls = studentsCache.filter(s => String(s.gender||'').toLowerCase() === 'girl');
+        const boys  = studentsCache.filter(s => String(s.gender||'').toLowerCase() === 'boy');
+        const unspecified = studentsCache.filter(s => !s.gender || (String(s.gender||'').toLowerCase() !== 'girl' && String(s.gender||'').toLowerCase() !== 'boy'));
+
+        let dailyGirlsPresent = 0;
+        let dailyBoysPresent = 0;
+
+        function appendGroupHeader(title){
+          const h = document.createElement('div'); h.className = 'p-2 font-semibold bg-slate-50'; h.textContent = title; area.appendChild(h);
+        }
+        if(girls.length){
+          appendGroupHeader('👧 Girls');
+          for(const s of girls){
+            const rec = map.get(s.studentId);
+            const status = rec? rec.status : 'absent';
+            if(status === 'present') dailyGirlsPresent++;
+            area.appendChild(makeAttendanceRow(s, status));
+          }
+        }
+        if(boys.length){
+          appendGroupHeader('👦 Boys');
+          for(const s of boys){
+            const rec = map.get(s.studentId);
+            const status = rec? rec.status : 'absent';
+            if(status === 'present') dailyBoysPresent++;
+            area.appendChild(makeAttendanceRow(s, status));
+          }
+        }
+        if(unspecified.length){
+          appendGroupHeader('❓ Unspecified');
+          for(const s of unspecified){
+            const rec = map.get(s.studentId);
+            const status = rec? rec.status : 'absent';
+            area.appendChild(makeAttendanceRow(s, status));
+          }
+        }
+
+        const dailyTotal = dailyGirlsPresent + dailyBoysPresent;
+        el('dailyGirls').textContent = dailyGirlsPresent;
+        el('dailyBoys').textContent = dailyBoysPresent;
+        el('dailyTotal').textContent = dailyTotal;
+        el('dailyAvg').textContent = studentsCache.length>0? ((dailyTotal/studentsCache.length)*100).toFixed(1) + '%' : '0%';
+
+        renderSummaryFromMap(map);
+      }catch(err){ console.error(err); toast('Load attendance failed: '+err.message); }
+    }
+
+    function readAttendance(){
+      const date = el('attendanceDate').value || fmtDate(new Date());
+      const teacher = el('teacherName').value.trim() || null;
+      const mode = el('attendanceMode').value || null;
+      const nowIso = new Date().toISOString();
+      const records = [];
+      for(const s of studentsCache){
+        const sid = s.studentId || '';
+        const checked = document.querySelector(`input[name="att-${sid}"]:checked`);
+        const status = checked? checked.value : 'absent';
+        records.push({ studentId: sid, date, status, classId: selectedClassId, teacher, mode, attendanceTime: nowIso, updatedAt: serverTimestamp() });
+      }
+      return records;
+    }
+
+    el('attendanceDate').addEventListener('change', ()=> renderAttendanceForSelectedDate());
+    el('markAllPresent').addEventListener('click', ()=> { el('attendanceArea').querySelectorAll('input[value=present]').forEach(i=>i.checked=true); });
+    el('markAllAbsent').addEventListener('click', ()=> { el('attendanceArea').querySelectorAll('input[value=absent]').forEach(i=>i.checked=true); });
+
+    el('saveAttendance').addEventListener('click', async ()=>{ 
+      if(!selectedClassId) return toast('Choose class'); 
+      const date = el('attendanceDate').value; 
+      if(!date) return toast('Pick date'); 
+      const records = readAttendance(); 
+      try{ 
+        // Use Promise.all with setDoc per student (id is composite date_studentId)
+        await Promise.all(records.map(r=> setDoc(doc(db,'attendance', `${r.date}_${r.studentId}`), r))); 
+        toast('Saved for '+date); 
+        await renderAttendanceForSelectedDate(); 
+      }catch(err){ console.error(err); toast('Save failed: '+err.message); } 
+    });
+
+    function renderSummaryFromMap(map){
+      const sum = { present:0, absent:0, late:0 };
+      for(const s of studentsCache){
+        const rec = map.get(s.studentId);
+        const st = rec? rec.status : 'absent';
+        sum[st] = (sum[st]||0)+1;
+      }
+      el('sumPresent').textContent = sum.present;
+      el('sumAbsent').textContent = sum.absent;
+      el('sumLate').textContent = sum.late;
+    }
+
+    // ---------- Reports & analysis ----------
+    function calcStartDateForRange(range){
+      const now = new Date();
+      if(range === 'today') return fmtDate(now);
+      if(range === '7days'){ const d = new Date(); d.setDate(d.getDate()-6); return fmtDate(d); }
+      if(range === '30days'){ const d = new Date(); d.setDate(d.getDate()-29); return fmtDate(d); }
+      // 'term' fallback — use distant past
+      return '2000-01-01';
+    }
+
+    // NOTE: Changed to query by DATE range only and then filter by classId client-side
+    // This avoids Firestore composite-index requirement when combining classId + range
+    el('generateReport').addEventListener('click', async ()=> {
+      if(!selectedClassId) return toast('Choose class');
+      const range = el('reportRange').value;
+      const start = calcStartDateForRange(range);
+      const end = fmtDate(new Date());
+      try{
+        // Query attendance by date range only (no classId in the query)
+        const q = query(collection(db,'attendance'), where('date','>=', start), where('date','<=', end));
+        const aSnap = await getDocs(q);
+        // Map + filter client-side by classId
+        const rows = aSnap.docs.map(d=> ({ id: d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+
+        const agg = {};
+        rows.forEach(r=>{ if(!agg[r.studentId]) agg[r.studentId] = { present:0, absent:0, late:0 }; agg[r.studentId][r.status] = (agg[r.studentId][r.status]||0)+1; });
+        const reportDiv = el('reportArea');
+        reportDiv.innerHTML = '<table class="w-full text-sm"><thead><tr class="text-left"><th>Student</th><th>Present</th><th>Absent</th><th>Late</th><th>Phone(s)</th></tr></thead><tbody>' + studentsCache.map(s=>{ const a = agg[s.studentId]||{present:0,absent:0,late:0}; const phones = [s.motherMobile, s.fatherMobile].filter(Boolean).join(', '); return `<tr><td>${escapeHtml(s.name)}</td><td>${a.present}</td><td>${a.absent}</td><td>${a.late}</td><td>${escapeHtml(phones||'')}</td></tr>`; }).join('') + '</tbody></table>';
+        toast('Report generated');
+      }catch(err){ console.error(err); toast('Report failed: '+err.message); }
+    });
+
+    // Export JSON (full for current class)
+    el('exportJson').addEventListener('click', async ()=>{ 
+      if(!selectedClassId) return toast('Choose class');
+      try{
+        // ---- CHANGED: fetch attendance collection and filter client-side to avoid index requirement ----
+        const [sSnap, aSnapAll, cSnap] = await Promise.all([ getDocs(query(collection(db,'students'), where('classId','==', selectedClassId))), getDocs(collection(db,'attendance')), getDocs(collection(db,'classes')) ]);
+        const aSnap = aSnapAll.docs.map(d=> ({ id:d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+        const data = { classes: cSnap.docs.map(d=> ({ id:d.id, ...d.data() })), students: sSnap.docs.map(d=> ({ id:d.id, ...d.data() })), attendance: aSnap };
+        const blob = new Blob([JSON.stringify(data,null,2)], { type:'application/json' });
+        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'attendance-full-export.json'; document.body.appendChild(a); a.click(); a.remove();
+        toast('Exported JSON');
+      }catch(err){ console.error(err); toast('Export failed: '+err.message); } 
+    });
+
+    // Export CSV (flat per date) for current class only
+    el('exportCsv').addEventListener('click', async ()=>{ 
+      if(!selectedClassId) return toast('Choose class');
+      try{
+        const [sSnap,aSnapAll] = await Promise.all([ getDocs(query(collection(db,'students'), where('classId','==', selectedClassId))), getDocs(collection(db,'attendance')) ]);
+        const studs = sSnap.docs.map(d=> ({ id:d.id, ...d.data() }));
+        const atts = aSnapAll.docs.map(d=> ({ id:d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+        const rows = ['Class,StudentID,StudentRoll,StudentName,Date,Status,Teacher,AttendanceTime,MotherMobile,FatherMobile,Address'].concat(atts.map(r=>{
+          const st = studs.find(s=>s.studentId===r.studentId) || {};
+          return `${escapeCsv(st.classId||'')},${escapeCsv(st.studentId||'')},${escapeCsv(st.roll||'')},${escapeCsv(st.name||'')},${r.date},${r.status},${escapeCsv(r.teacher||'')},${escapeCsv(r.attendanceTime||'')},${escapeCsv(st.motherMobile||'')},${escapeCsv(st.fatherMobile||'')},${escapeCsv(st.address||'')}`;
+        }));
+        const blob = new Blob([rows.join('\n')], { type:'text/csv' });
+        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='attendance.csv'; document.body.appendChild(a); a.click(); a.remove();
+        toast('CSV exported');
+      }catch(err){ console.error(err); toast('CSV export failed: '+err.message); } 
+    });
+
+    // Download analysis CSV (aggregated per student for selected class & range)
+    el('downloadAnalysis').addEventListener('click', async ()=> {
+      if(!selectedClassId) return toast('Choose class');
+      const range = el('reportRange').value || '30days';
+      const start = calcStartDateForRange(range);
+      const end = fmtDate(new Date());
+      try{
+        // Query by date range only, then filter by classId to avoid index requirement
+        const snap = await getDocs(query(collection(db,'attendance'), where('date','>=', start), where('date','<=', end)));
+        const rows = snap.docs.map(d=> ({ id:d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+        const agg = {};
+        rows.forEach(r=>{ if(!agg[r.studentId]) agg[r.studentId] = { present:0, absent:0, late:0 }; agg[r.studentId][r.status] = (agg[r.studentId][r.status]||0)+1; });
+        const header = 'StudentID,StudentRoll,StudentName,Present,Absent,Late,MotherMobile,FatherMobile,Address\n';
+        const lines = studentsCache.map(s=>{ const a = agg[s.studentId]||{present:0,absent:0,late:0}; return `${escapeCsv(s.studentId||'')},${escapeCsv(s.roll||'')},${escapeCsv(s.name)},${a.present},${a.absent},${a.late},${escapeCsv(s.motherMobile||'')},${escapeCsv(s.fatherMobile||'')},${escapeCsv(s.address||'')}`; });
+        const blob = new Blob([header + lines.join('\n')], { type:'text/csv' });
+        const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='analysis.csv'; document.body.appendChild(a); a.click(); a.remove();
+        toast('Analysis downloaded');
+      }catch(err){ console.error(err); toast('Analysis download failed: '+err.message); }
+    });
+
+    // Register: paste CSV or JSON (uses PapaParse)
+    el('applyRegister').addEventListener('click', async () => {
+      if(!selectedClassId) return toast('Choose class first');
+      const txt = el('registerInput').value.trim(); if(!txt) return toast('Paste CSV or JSON rows');
+      try{
+        const parsedJson = JSON.parse(txt);
+        if(Array.isArray(parsedJson)){
+          let applied=0;
+          for(const r of parsedJson){ if(!r.date || !r.roll || !r.status) continue; const student = studentsCache.find(s=> String(s.roll||'') === String(r.roll) || String(s.studentId||'') === String(r.studentId)); if(!student) continue; await setDoc(doc(db,'attendance', `${r.date}_${student.studentId}`), { studentId: student.studentId, date: r.date, status: r.status, classId: selectedClassId, teacher: r.teacher||null, mode: r.mode||null, attendanceTime: r.attendanceTime || new Date().toISOString(), importedAt: serverTimestamp() }); applied++; }
+          toast(`Register applied (JSON) — ${applied} rows`);
+          await renderAttendanceForSelectedDate();
+          return;
+        }
+      }catch(e){ /* not json */ }
+
+      // CSV via PapaParse
+      const parsed = Papa.parse(txt, { header: false, skipEmptyLines: true });
+      if(parsed.errors && parsed.errors.length) console.warn('Register CSV parse errors', parsed.errors);
+      let applied=0;
+      for(const row of parsed.data){
+        // Expected: date,roll,status  (if header exists and columns vary, user should use JSON or header mode)
+        const cols = row.map(c => (c||'').toString().trim());
+        if(cols.length < 3) continue;
+        const [date, roll, status] = cols;
+        const student = studentsCache.find(s=> String(s.roll||'') === String(roll) || String(s.studentId||'') === String(roll));
+        if(!student) continue;
+        try{ await setDoc(doc(db,'attendance', `${date}_${student.studentId}`), { studentId: student.studentId, date, status, classId: selectedClassId, teacher: null, mode: null, attendanceTime: new Date().toISOString(), importedAt: serverTimestamp() }); applied++; }catch(err){ console.error('register row failed', err); }
+      }
+      toast(`Register applied (CSV) — ${applied} rows`);
+      await renderAttendanceForSelectedDate();
+    });
+
+    el('clearRegister').addEventListener('click', ()=> el('registerInput').value='');
+
+    // Download current single-file HTML
+    el('downloadFile').addEventListener('click', ()=>{ const html = '<!doctype html>\\n' + document.documentElement.outerHTML; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = 'school-attendance-firestore-fixed.html'; document.body.appendChild(a); a.click(); a.remove(); });
+
+    // init
+    (function init(){ el('attendanceDate').value = fmtDate(new Date()); startClassesListener(); })();
+
+  </script>
+
+
+<script>
+  document.addEventListener('keydown', (e) => {
+    // Define allowed Ctrl-based shortcuts
+    const allowedCtrl = ["c", "v", "x", "z", "a"]; // copy, paste, cut, undo, select all
+
+    // If Ctrl is pressed
+    if (e.ctrlKey && !e.altKey && !e.metaKey) {
+      const key = e.key.toLowerCase();
+
+      // If key is not in allowed list → block it
+      if (!allowedCtrl.includes(key)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        console.log("Blocked Ctrl+" + key);
+        return false;
+      }
+    }
+
+    // Block pressing only Ctrl or Alt by themselves
+    if (e.key === "Control" || e.key === "Alt") {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return false;
+    }
+  }, { capture: true });
+</script>
+
+
+<style>
+  /* Change text selection highlight to orange */
+  ::selection {
+    background: orange;
+    color: white; /* optional for better contrast */
+  }
+  ::-moz-selection { /* for Firefox */
+    background: orange;
+    color: white;
+  }
+</style>
+
+<script>
+  // Disable right-click context menu
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    return false;
+  });
+</script>
+
+<script>
+  window.addEventListener("load", () => {
+    const splash = document.getElementById("splashScreen");
+    setTimeout(() => {
+      splash.style.opacity = "0";
+      setTimeout(() => splash.style.display = "none", 600); // match transition
+    }, 1000); // show for 1s
+  });
+</script>
+
+
+</body>
+</html>
