@@ -143,9 +143,8 @@
       Sir John Kothalawala Maha Vidyalaya - School Attendance
     </h1>
     <p class="text-sm font-medium text-orange-500 mt-1">
-      Conceptualized, designed, and developed by 
-      <span class="font-semibold">Induwara P. Jayasinghe</span> 
-      with a focus on clean code, scalable architecture, and seamless user experiences across devices.
+      Made with ❤️ by <span class="font-semibold">Induwara P. Jayasinghe</span>.
+
     </p>
   </div>
 </div>
@@ -153,7 +152,15 @@
 
 
       <div class="flex gap-2 flex-wrap">
+<button id="eraseClasses" class="px-3 py-2 bg-red-100 text-red-600 rounded">Delete Classes</button>
+<button id="eraseAll" class="px-3 py-2 bg-red-200 text-red-700 rounded">Delete ALL Data</button>
         <button id="downloadFile" class="px-3 py-2 bg-slate-100 rounded">Download HTML</button>
+        <button id="backupJson" class="px-3 py-2 bg-slate-100 rounded">Backup Data</button>
+<button id="restoreJson" class="px-3 py-2 bg-slate-100 rounded">Restore Backup</button>
+<input id="restoreJsonFile" type="file" accept="application/json" class="hidden" />
+
+
+
         <button id="downloadAnalysis" class="px-3 py-2 bg-slate-100 rounded">Download Analysis CSV</button>
       </div>
     </header>
@@ -931,6 +938,121 @@
     el('downloadFile').addEventListener('click', ()=>{ const html = '<!doctype html>\\n' + document.documentElement.outerHTML; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = 'school-attendance-firestore-fixed.html'; document.body.appendChild(a); a.click(); a.remove(); });
 
     // init
+
+// ---- Full Backup (All Data) ----
+el('backupJson').addEventListener('click', async () => {
+  try {
+    const [cSnap, sSnap, aSnap] = await Promise.all([
+      getDocs(collection(db, 'classes')),
+      getDocs(collection(db, 'students')),
+      getDocs(collection(db, 'attendance'))
+    ]);
+
+    const data = {
+      classes: cSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      students: sSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      attendance: aSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'attendance-backup.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast('Full backup downloaded');
+  } catch (err) {
+    console.error(err);
+    toast('Backup failed: ' + err.message);
+  }
+});
+
+// ---- Restore Backup ----
+el('restoreJson').addEventListener('click', () => el('restoreJsonFile').click());
+
+el('restoreJsonFile').addEventListener('change', async (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if (!data.classes || !data.students || !data.attendance) {
+      toast('Invalid backup file');
+      return;
+    }
+
+    if (!confirm('This will overwrite current data. Continue?')) return;
+
+    const batch = writeBatch(db);
+
+    // clear old data
+    const clearCollections = async (name) => {
+      const snap = await getDocs(collection(db, name));
+      snap.docs.forEach(docSnap => batch.delete(doc(db, name, docSnap.id)));
+    };
+    await clearCollections('classes');
+    await clearCollections('students');
+    await clearCollections('attendance');
+
+    // restore data
+    data.classes.forEach(c => batch.set(doc(db, 'classes', c.id), c));
+    data.students.forEach(s => batch.set(doc(db, 'students', s.id), s));
+    data.attendance.forEach(a => batch.set(doc(db, 'attendance', a.id), a));
+
+    await batch.commit();
+    toast('Backup restored successfully');
+    startClassesListener(); // reload UI
+  } catch (err) {
+    console.error(err);
+    toast('Restore failed: ' + err.message);
+  }
+});
+
+// ---- Erase Only Classes ----
+el('eraseClasses').addEventListener('click', async () => {
+  if (!confirm('⚠️ This will delete ALL classes. Students and attendance will remain. Continue?')) return;
+  try {
+    const snap = await getDocs(collection(db, 'classes'));
+    const batch = writeBatch(db);
+    snap.docs.forEach(docSnap => batch.delete(doc(db, 'classes', docSnap.id)));
+    await batch.commit();
+    toast('All classes erased');
+    startClassesListener(); // refresh UI
+  } catch (err) {
+    console.error(err);
+    toast('Erase failed: ' + err.message);
+  }
+});
+
+// ---- Erase ALL Data ----
+el('eraseAll').addEventListener('click', async () => {
+  if (!confirm('⚠️ WARNING: This will delete ALL classes, students, and attendance! Continue?')) return;
+  try {
+    const batch = writeBatch(db);
+
+    const eraseCollection = async (name) => {
+      const snap = await getDocs(collection(db, name));
+      snap.docs.forEach(docSnap => batch.delete(doc(db, name, docSnap.id)));
+    };
+
+    await eraseCollection('classes');
+    await eraseCollection('students');
+    await eraseCollection('attendance');
+
+    await batch.commit();
+    toast('ALL data erased');
+    startClassesListener(); // refresh UI
+  } catch (err) {
+    console.error(err);
+    toast('Erase all failed: ' + err.message);
+  }
+});
+
+
+
     (function init(){ el('attendanceDate').value = fmtDate(new Date()); startClassesListener(); })();
 
   </script>
@@ -997,4 +1119,5 @@
 
 </body>
 </html>
+
 
