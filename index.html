@@ -96,6 +96,20 @@
 }
 
 
+/* Student list height */
+#studentBox {
+  max-height: 48vh;       /* on mobile: 48vh */
+  overflow-y: auto;       /* enable scrolling */
+}
+
+@media (min-width: 768px) {
+  #studentBox {
+    max-height: none;     /* on PC: no height limit */
+    overflow-y: visible;  /* show all students, no scroll */
+  }
+}
+
+
 
   </style>
 </head>
@@ -193,9 +207,10 @@
             <p class="text-xs text-slate-600">Add students to the selected class. Each student has a unique Student ID (digits and `_` only).</p>
           </div>
 
-          <div class="overflow-y-auto" style="max-height:28vh">
-            <ul id="studentList" class="space-y-2"></ul>
-          </div>
+          <div id="studentBox">
+  <ul id="studentList" class="space-y-2"></ul>
+</div>
+
 
           <div class="mt-2 p-2 bg-slate-50 rounded text-sm">
             👧 Girls: <span id="totalGirls">0</span> • 👦 Boys: <span id="totalBoys">0</span><br>
@@ -279,21 +294,28 @@
           <div class="flex items-center gap-2">
             <label class="text-sm">Reports</label>
             <select id="reportRange" class="border rounded px-3 py-2">
-              <option value="today">Today</option>
-              <option value="7days">Last 7 days</option>
-              <option value="30days">Last 30 days</option>
-              <option value="term">This Term</option>
-            </select>
-            <button id="generateReport" class="px-3 py-2 bg-white border rounded">Generate</button>
+  <option value="today">Today</option>
+  <option value="week">This Week</option>
+  <option value="month">This Month</option>
+  <option value="term">This Term</option>
+  <option value="custom">Custom Range</option>
+</select>
+<input id="reportStart" type="date" class="border rounded px-2 py-1 hidden"/>
+<input id="reportEnd" type="date" class="border rounded px-2 py-1 hidden"/>
+<button id="generateReport" class="px-3 py-2 bg-white border rounded">Generate</button>
+
           </div>
 
           <div class="ml-auto flex gap-2">
             <button id="exportJson" class="px-3 py-2 bg-white border rounded">Export JSON</button>
             <button id="exportCsv" class="px-3 py-2 bg-white border rounded">Export CSV</button>
+<button id="downloadExcel" class="px-3 py-2 bg-green-600 text-white rounded">Download Excel</button>
+
           </div>
         </div>
 
-        <div id="reportArea" class="mt-2 overflow-auto" style="max-height:22vh"></div>
+       <div id="reportArea" class="mt-2 overflow-auto border rounded p-2 bg-white"></div>
+
 
         <hr/>
         <div>
@@ -829,25 +851,297 @@
 
     // NOTE: Changed to query by DATE range only and then filter by classId client-side
     // This avoids Firestore composite-index requirement when combining classId + range
-    el('generateReport').addEventListener('click', async ()=> {
-      if(!selectedClassId) return toast('Choose class');
-      const range = el('reportRange').value;
-      const start = calcStartDateForRange(range);
-      const end = fmtDate(new Date());
-      try{
-        // Query attendance by date range only (no classId in the query)
-        const q = query(collection(db,'attendance'), where('date','>=', start), where('date','<=', end));
-        const aSnap = await getDocs(q);
-        // Map + filter client-side by classId
-        const rows = aSnap.docs.map(d=> ({ id: d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+// REPLACE the old generateReport handler with this entire block:
+el('generateReport').addEventListener('click', async () => {
+  if (!selectedClassId) return toast('Choose class');
 
-        const agg = {};
-        rows.forEach(r=>{ if(!agg[r.studentId]) agg[r.studentId] = { present:0, absent:0, late:0 }; agg[r.studentId][r.status] = (agg[r.studentId][r.status]||0)+1; });
-        const reportDiv = el('reportArea');
-        reportDiv.innerHTML = '<table class="w-full text-sm"><thead><tr class="text-left"><th>Student</th><th>Present</th><th>Absent</th><th>Late</th><th>Phone(s)</th></tr></thead><tbody>' + studentsCache.map(s=>{ const a = agg[s.studentId]||{present:0,absent:0,late:0}; const phones = [s.motherMobile, s.fatherMobile].filter(Boolean).join(', '); return `<tr><td>${escapeHtml(s.name)}</td><td>${a.present}</td><td>${a.absent}</td><td>${a.late}</td><td>${escapeHtml(phones||'')}</td></tr>`; }).join('') + '</tbody></table>';
-        toast('Report generated');
-      }catch(err){ console.error(err); toast('Report failed: '+err.message); }
+  // Determine date range
+  const range = el('reportRange').value;
+  const now = new Date();
+  let start, end = fmtDate(now);
+
+  if (range === 'today') {
+    start = fmtDate(now);
+  } else if (range === 'week') {
+    const d = new Date(); d.setDate(now.getDate() - 6); start = fmtDate(d);
+  } else if (range === 'month') {
+    const d = new Date(); d.setDate(now.getDate() - 29); start = fmtDate(d);
+  } else if (range === 'term') {
+    start = '2000-01-01';
+  } else if (range === 'custom') {
+    start = el('reportStart').value;
+    end = el('reportEnd').value || end;
+    if (!start || !end) return toast('Pick start and end dates for custom range');
+  } else {
+    // fallback to last 7 days
+    const d = new Date(); d.setDate(now.getDate() - 6); start = fmtDate(d);
+  }
+
+  try {
+    // fetch attendance records in the range (filtered by class client-side)
+    const q = query(collection(db, 'attendance'), where('date', '>=', start), where('date', '<=', end));
+    const aSnap = await getDocs(q);
+    const rows = aSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+
+    // build a map: attendanceMap[date][studentId] => record
+    const attendanceMap = {};
+    rows.forEach(r => {
+      if (!attendanceMap[r.date]) attendanceMap[r.date] = {};
+      attendanceMap[r.date][r.studentId] = r;
     });
+
+    // helper: get list of date strings between start and end (inclusive)
+    function getDatesBetween(s, e) {
+      const arr = [];
+      let cur = new Date(s);
+      const last = new Date(e);
+      while (cur <= last) {
+        arr.push(fmtDate(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+      return arr;
+    }
+
+    // ensure studentsCache is loaded and sorted (roll numeric first, then name)
+    if (!studentsCache || studentsCache.length === 0) {
+      await loadStudentsForClass(selectedClassId);
+    }
+    const sortStudents = (a, b) => {
+      const aRoll = Number(a.roll);
+      const bRoll = Number(b.roll);
+      const aIsNum = Number.isFinite(aRoll);
+      const bIsNum = Number.isFinite(bRoll);
+      if (aIsNum && bIsNum && aRoll !== bRoll) return aRoll - bRoll;
+      if (aIsNum && !bIsNum) return -1;
+      if (!aIsNum && bIsNum) return 1;
+      return (a.name || '').localeCompare(b.name || '');
+    };
+    const studentsSorted = [...studentsCache].sort(sortStudents);
+
+    const dates = getDatesBetween(start, end);
+    if (dates.length === 0) return el('reportArea').innerHTML = "<p class='text-slate-500'>No dates in range</p>";
+
+    let html = '';
+
+    dates.forEach(date => {
+      // build per-date arrays from full student list (so students without records show default 'absent')
+      const boys = [];
+      const girls = [];
+      const unknown = [];
+
+      for (const s of studentsSorted) {
+        const rec = attendanceMap[date] && attendanceMap[date][s.studentId];
+        const status = rec ? (rec.status || 'absent') : 'absent';
+        const teacher = rec ? (rec.teacher || '-') : '-';
+        const mode = rec ? (rec.mode || '-') : '-';
+        const row = { roll: s.roll || '', name: s.name || s.studentId || '', status, teacher, mode };
+
+        const g = String(s.gender || '').toLowerCase();
+        if (g === 'boy') boys.push(row);
+        else if (g === 'girl') girls.push(row);
+        else unknown.push(row);
+      }
+
+      // header for the date
+      html += `<h4 class="font-semibold mt-4 mb-2">📅 ${date}</h4>`;
+      html += `<table class="w-full text-sm border border-slate-300 rounded-lg mb-4">
+        <thead class="bg-slate-200">
+          <tr>
+            <th class="px-3 py-2 text-left">Roll</th>
+            <th class="px-3 py-2 text-left">Student</th>
+            <th class="px-3 py-2 text-center">Status</th>
+            <th class="px-3 py-2 text-center">Teacher</th>
+            <th class="px-3 py-2 text-center">Mode</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      // helper to add a group (boys/girls/unknown)
+      function addGroup(title, arr) {
+        if (!arr.length) return;
+        html += `<tr class="bg-slate-100 font-semibold"><td colspan="5" class="px-3 py-2">${title}</td></tr>`;
+        arr.forEach(r => {
+          html += `<tr class="border-b border-slate-200 hover:bg-slate-50">
+            <td class="px-3 py-2">${escapeHtml(r.roll)}</td>
+            <td class="px-3 py-2">${escapeHtml(r.name)}</td>
+            <td class="px-3 py-2 text-center">${escapeHtml(r.status)}</td>
+            <td class="px-3 py-2 text-center">${escapeHtml(r.teacher)}</td>
+            <td class="px-3 py-2 text-center">${escapeHtml(r.mode)}</td>
+          </tr>`;
+        });
+        const present = arr.filter(x => x.status === 'present').length;
+        const absent = arr.filter(x => x.status === 'absent').length;
+        const late = arr.filter(x => x.status === 'late').length;
+        html += `<tr class="font-semibold bg-slate-50">
+          <td colspan="5" class="px-3 py-2 text-right">${title} — Total: ${arr.length} • Present: ${present} • Absent: ${absent} • Late: ${late}</td>
+        </tr>`;
+      }
+
+      // order required: Boys first, then Girls, then Unspecified
+      addGroup('👦 Boys', boys);
+      addGroup('👧 Girls', girls);
+      addGroup('❓ Unspecified', unknown);
+
+      // Grand total for date
+      const total = boys.length + girls.length + unknown.length;
+      const totalPresent = boys.filter(x => x.status === 'present').length
+        + girls.filter(x => x.status === 'present').length
+        + unknown.filter(x => x.status === 'present').length;
+      const totalAbsent = total - totalPresent - (boys.filter(x=>x.status==='late').length + girls.filter(x=>x.status==='late').length + unknown.filter(x=>x.status==='late').length);
+      const totalLate = boys.filter(x=>x.status==='late').length + girls.filter(x=>x.status==='late').length + unknown.filter(x=>x.status==='late').length;
+
+      html += `<tr class="font-bold bg-indigo-50">
+        <td colspan="5" class="px-3 py-2 text-right">All Students Total: ${total} • Present: ${totalPresent} • Absent: ${totalAbsent} • Late: ${totalLate}</td>
+      </tr>`;
+
+      html += `</tbody></table>`;
+    });
+
+    el('reportArea').innerHTML = html || "<p class='text-slate-500'>No records</p>";
+    toast('Register-style report generated');
+  } catch (err) {
+    console.error(err);
+    toast('Report failed: ' + err.message);
+  }
+});
+
+
+// Download register-style report as nicely formatted Excel
+el("downloadExcel").addEventListener("click", async () => {
+  if (!selectedClassId) return toast("Choose class first");
+
+  const now = new Date();
+  const fileName = `blackhatsheets-${fmtDate(now)}.xlsx`;
+
+  // same range as report
+  const range = el("reportRange").value;
+  let start, end = fmtDate(now);
+  if (range === "today") {
+    start = fmtDate(now);
+  } else if (range === "week") {
+    const d = new Date(); d.setDate(now.getDate() - 6); start = fmtDate(d);
+  } else if (range === "month") {
+    const d = new Date(); d.setDate(now.getDate() - 29); start = fmtDate(d);
+  } else if (range === "term") {
+    start = "2000-01-01";
+  } else if (range === "custom") {
+    start = el("reportStart").value;
+    end = el("reportEnd").value || end;
+  }
+
+  // fetch attendance
+  const q = query(collection(db, "attendance"), where("date", ">=", start), where("date", "<=", end));
+  const aSnap = await getDocs(q);
+  const rows = aSnap.docs.map(d => ({ ...d.data() })).filter(r => r.classId === selectedClassId);
+
+  // build map: attendanceMap[date][studentId]
+  const attendanceMap = {};
+  rows.forEach(r => {
+    if (!attendanceMap[r.date]) attendanceMap[r.date] = {};
+    attendanceMap[r.date][r.studentId] = r;
+  });
+
+  // ensure students list
+  if (!studentsCache || studentsCache.length === 0) {
+    await loadStudentsForClass(selectedClassId);
+  }
+  const studentsSorted = [...studentsCache].sort((a, b) => {
+    const aRoll = Number(a.roll), bRoll = Number(b.roll);
+    if (aRoll && bRoll) return aRoll - bRoll;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+
+  // helper: dates between start and end
+  function getDatesBetween(s, e) {
+    const arr = [];
+    let cur = new Date(s), last = new Date(e);
+    while (cur <= last) {
+      arr.push(fmtDate(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return arr;
+  }
+  const dates = getDatesBetween(start, end);
+
+  // Excel workbook
+  const wb = XLSX.utils.book_new();
+  let sheetData = [];
+  let rowStyles = {};
+
+  dates.forEach(date => {
+    const startRow = sheetData.length + 1;
+
+    // date header
+    sheetData.push([`Date: ${date}`]);
+    rowStyles[sheetData.length] = { bold: true, fontSize: 14 };
+
+    // headers
+    sheetData.push(["Roll", "Student", "Status", "Teacher", "Mode"]);
+    rowStyles[sheetData.length] = { bold: true, bg: "DDDDDD" };
+
+    const boys = [], girls = [], unknown = [];
+    for (const s of studentsSorted) {
+      const rec = attendanceMap[date] && attendanceMap[date][s.studentId];
+      const status = rec ? (rec.status || "absent") : "absent";
+      const teacher = rec ? (rec.teacher || "-") : "-";
+      const mode = rec ? (rec.mode || "-") : "-";
+      const row = [s.roll || "", s.name || s.studentId, status, teacher, mode];
+      const g = String(s.gender || "").toLowerCase();
+      if (g === "boy") boys.push(row);
+      else if (g === "girl") girls.push(row);
+      else unknown.push(row);
+    }
+
+    function addGroup(title, arr, color) {
+      if (!arr.length) return;
+      sheetData.push([title]);
+      rowStyles[sheetData.length] = { bold: true, bg: color };
+      arr.forEach(r => sheetData.push(r));
+      const total = arr.length;
+      const present = arr.filter(r => r[2] === "present").length;
+      const absent = arr.filter(r => r[2] === "absent").length;
+      const late = arr.filter(r => r[2] === "late").length;
+      sheetData.push([`${title} Total: ${total} • Present: ${present} • Absent: ${absent} • Late: ${late}`]);
+      rowStyles[sheetData.length] = { bold: true, bg: "F3F3F3" };
+    }
+
+    addGroup("👦 Boys", boys, "CCE5FF");   // light blue
+    addGroup("👧 Girls", girls, "F8D7DA"); // light pink
+    addGroup("❓ Unspecified", unknown, "E2E3E5"); // light gray
+
+    const all = [...boys, ...girls, ...unknown];
+    const total = all.length;
+    const present = all.filter(r => r[2] === "present").length;
+    const absent = all.filter(r => r[2] === "absent").length;
+    const late = all.filter(r => r[2] === "late").length;
+    sheetData.push([`All Students Total: ${total} • Present: ${present} • Absent: ${absent} • Late: ${late}`]);
+    rowStyles[sheetData.length] = { bold: true, bg: "D6EAF8" };
+
+    sheetData.push([]); // blank row between dates
+  });
+
+  // create worksheet
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+  // apply styles (basic: bold + fill color)
+  Object.entries(rowStyles).forEach(([r, style]) => {
+    const rowIndex = parseInt(r);
+    const row = sheetData[rowIndex - 1];
+    for (let c = 0; c < (row?.length || 1); c++) {
+      const cellRef = XLSX.utils.encode_cell({ r: rowIndex - 1, c });
+      if (!ws[cellRef]) continue;
+      ws[cellRef].s = {
+        font: { bold: style.bold || false, sz: style.fontSize || 11 },
+        fill: style.bg ? { fgColor: { rgb: style.bg } } : undefined
+      };
+    }
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws, "Report");
+  XLSX.writeFile(wb, fileName);
+  toast("Excel downloaded: " + fileName);
+});
+
 
     // Export JSON (full for current class)
     el('exportJson').addEventListener('click', async ()=>{ 
@@ -1052,6 +1346,18 @@ el('eraseAll').addEventListener('click', async () => {
 });
 
 
+// Show custom date pickers only if "Custom" is selected
+el('reportRange').addEventListener('change', e=>{
+  if(e.target.value === 'custom'){
+    el('reportStart').classList.remove('hidden');
+    el('reportEnd').classList.remove('hidden');
+  } else {
+    el('reportStart').classList.add('hidden');
+    el('reportEnd').classList.add('hidden');
+  }
+});
+
+
 
     (function init(){ el('attendanceDate').value = fmtDate(new Date()); startClassesListener(); })();
 
@@ -1116,8 +1422,11 @@ el('eraseAll').addEventListener('click', async () => {
   });
 </script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 
 </body>
 </html>
+
 
 
