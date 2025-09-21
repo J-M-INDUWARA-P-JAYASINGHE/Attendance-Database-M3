@@ -3,6 +3,8 @@
 <head><link rel="icon" type="image/x-icon" href="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" />
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -109,6 +111,21 @@
   }
 }
 
+/* ===== Attendance Area Height Rules ===== */
+#attendanceArea {
+  min-height: 400px;   /* increased from 260 → 400 */
+  max-height: 50vh;    /* on mobile: half screen height, scrolls if needed */
+  overflow-y: auto;    /* enable scrolling */
+}
+
+/* On desktop (≥1024px), show all students, no scroll */
+@media (min-width: 1024px) {
+  #attendanceArea {
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+}
+
 
 
   </style>
@@ -157,7 +174,7 @@
       Sir John Kothalawala Maha Vidyalaya - School Attendance
     </h1>
     <p class="text-sm font-medium text-orange-500 mt-1">
-      Made with ❤️ by <span class="font-semibold">Induwara P. Jayasinghe</span>.
+      Made wit❤️ by <span class="font-semibold">Induwara P. Jayasinghe</span>.
 
     </p>
   </div>
@@ -276,7 +293,8 @@
           <button id="saveAttendance" class="px-3 py-2 bg-indigo-600 text-white rounded flex-1">Save Attendance</button>
         </div>
 
-        <div id="attendanceArea" class="overflow-auto border rounded" style="min-height:260px; max-height:50vh"></div>
+        <div id="attendanceArea" class="overflow-auto border rounded"></div>
+
 
         <div class="grid grid-cols-3 gap-3 mt-2">
           <div class="p-3 rounded bg-green-50">Present: <span id="sumPresent" class="font-semibold">0</span></div>
@@ -290,29 +308,75 @@
 
         <hr/>
 
-        <div class="flex flex-col md:flex-row gap-3 md:items-center">
-          <div class="flex items-center gap-2">
-            <label class="text-sm">Reports</label>
-            <select id="reportRange" class="border rounded px-3 py-2">
-  <option value="today">Today</option>
-  <option value="week">This Week</option>
-  <option value="month">This Month</option>
-  <option value="term">This Term</option>
-  <option value="custom">Custom Range</option>
-</select>
-<input id="reportStart" type="date" class="border rounded px-2 py-1 hidden"/>
-<input id="reportEnd" type="date" class="border rounded px-2 py-1 hidden"/>
-<button id="generateReport" class="px-3 py-2 bg-white border rounded">Generate</button>
+        <!-- Reports Section -->
+<div class="p-4 bg-white border rounded-lg shadow-sm flex flex-col md:flex-row md:items-center gap-4">
+  <!-- Left controls -->
+  <div class="flex flex-wrap items-center gap-3">
+    <label for="reportRange" class="text-sm font-medium">Reports</label>
+    <select id="reportRange" class="border rounded-lg px-3 py-2 text-sm">
+      <option value="today">Today</option>
+      <option value="week">This Week</option>
+      <option value="month">This Month</option>
+      <option value="term">This Term</option>
+      <option value="custom">Custom Range</option>
+    </select>
+    <input id="reportStart" type="date" class="border rounded-lg px-3 py-2 text-sm hidden"/>
+    <input id="reportEnd" type="date" class="border rounded-lg px-3 py-2 text-sm hidden"/>
+    <button id="generateReport" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+      Generate
+    </button>
+  </div>
 
-          </div>
+  <!-- Right buttons -->
+  <div class="flex gap-2 md:ml-auto">
 
-          <div class="ml-auto flex gap-2">
-            <button id="exportJson" class="px-3 py-2 bg-white border rounded">Export JSON</button>
-            <button id="exportCsv" class="px-3 py-2 bg-white border rounded">Export CSV</button>
-<button id="downloadExcel" class="px-3 py-2 bg-green-600 text-white rounded">Download Excel</button>
+    <button id="exportJson" class="px-4 py-2 bg-white border rounded-lg text-sm hover:bg-gray-50">Export JSON</button>
+    <button id="exportCsv" class="px-4 py-2 bg-white border rounded-lg text-sm hover:bg-gray-50">Export CSV</button>
+    <button id="downloadExcel" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">
+      Download Excel
+    </button>
+  </div>
+</div>
 
-          </div>
-        </div>
+<!-- Per-Student Report Section -->
+<div class="mt-4 p-4 bg-white border rounded-lg shadow-sm flex flex-col md:flex-row md:items-center gap-4">
+  <!-- Student select -->
+  <div class="flex items-center gap-2 w-full md:w-auto">
+    <label for="studentReportSelect" class="text-sm font-medium">Student</label>
+    <select id="studentReportSelect" class="border rounded-lg px-3 py-2 text-sm w-full md:w-auto">
+      <option value="">— Select student —</option>
+    </select>
+  </div>
+
+  <!-- Range select -->
+  <div class="flex items-center gap-2 w-full md:w-auto">
+    <label for="studentReportRange" class="text-sm font-medium">Range</label>
+    <select id="studentReportRange" class="border rounded-lg px-3 py-2 text-sm w-full md:w-auto">
+      <option value="all">All</option>
+      <option value="today">Today</option>
+      <option value="week">Last 7 days</option>
+      <option value="month">Last 30 days</option>
+      <option value="custom">Custom</option>
+    </select>
+    <input id="studentReportStart" type="date" class="border rounded-lg px-3 py-2 text-sm hidden"/>
+    <input id="studentReportEnd" type="date" class="border rounded-lg px-3 py-2 text-sm hidden"/>
+  </div>
+
+  <!-- Buttons -->
+  <div class="flex flex-wrap gap-2 md:ml-auto">
+    <button id="generateStudentReport" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+      Preview
+    </button>
+    <button id="exportStudentCsv" class="px-4 py-2 bg-white border rounded-lg text-sm hover:bg-gray-50">
+      Export CSV
+    </button>
+    <button id="exportStudentExcel" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">
+      Export Excel
+    </button>
+  </div>
+</div>
+
+
 
        <div id="reportArea" class="mt-2 overflow-auto border rounded p-2 bg-white"></div>
 
@@ -547,7 +611,9 @@
         studentsCache = snap.docs.map(d=> ({ id: d.id, ...d.data() }));
         studentsCache.sort((a,b)=> (String(a.roll||'')).localeCompare(String(b.roll||'')) || a.name.localeCompare(b.name));
         renderStudents();
-        await renderAttendanceForSelectedDate();
+populateStudentReportSelect();   // <--- add this line
+await renderAttendanceForSelectedDate();
+
       }catch(err){ console.error(err); toast('Load students failed: '+err.message); }
     }
 
@@ -575,9 +641,10 @@
         }
       }
 
-      appendGroup('👧 Girls', girls);
       appendGroup('👦 Boys', boys);
-      if(unspecified.length) appendGroup('❓ Unspecified', unspecified);
+appendGroup('👧 Girls', girls);
+if (unspecified.length) appendGroup('❓ Unspecified', unspecified);
+
 
       ul.querySelectorAll('.editBtn').forEach(b=> b.addEventListener('click', e=> startEditStudent(e.target.dataset.id)));
       ul.querySelectorAll('.delBtn').forEach(b=> b.addEventListener('click', e=> deleteStudent(e.target.dataset.id)));
@@ -758,32 +825,35 @@
         function appendGroupHeader(title){
           const h = document.createElement('div'); h.className = 'p-2 font-semibold bg-slate-50'; h.textContent = title; area.appendChild(h);
         }
-        if(girls.length){
-          appendGroupHeader('👧 Girls');
-          for(const s of girls){
-            const rec = map.get(s.studentId);
-            const status = rec? rec.status : 'absent';
-            if(status === 'present') dailyGirlsPresent++;
-            area.appendChild(makeAttendanceRow(s, status));
-          }
-        }
-        if(boys.length){
-          appendGroupHeader('👦 Boys');
-          for(const s of boys){
-            const rec = map.get(s.studentId);
-            const status = rec? rec.status : 'absent';
-            if(status === 'present') dailyBoysPresent++;
-            area.appendChild(makeAttendanceRow(s, status));
-          }
-        }
-        if(unspecified.length){
-          appendGroupHeader('❓ Unspecified');
-          for(const s of unspecified){
-            const rec = map.get(s.studentId);
-            const status = rec? rec.status : 'absent';
-            area.appendChild(makeAttendanceRow(s, status));
-          }
-        }
+        if (boys.length) {
+  appendGroupHeader('👦 Boys');
+  for (const s of boys) {
+    const rec = map.get(s.studentId);
+    const status = rec ? rec.status : 'absent';
+    if (status === 'present') dailyBoysPresent++;
+    area.appendChild(makeAttendanceRow(s, status));
+  }
+}
+
+if (girls.length) {
+  appendGroupHeader('👧 Girls');
+  for (const s of girls) {
+    const rec = map.get(s.studentId);
+    const status = rec ? rec.status : 'absent';
+    if (status === 'present') dailyGirlsPresent++;
+    area.appendChild(makeAttendanceRow(s, status));
+  }
+}
+
+if (unspecified.length) {
+  appendGroupHeader('❓ Unspecified');
+  for (const s of unspecified) {
+    const rec = map.get(s.studentId);
+    const status = rec ? rec.status : 'absent';
+    area.appendChild(makeAttendanceRow(s, status));
+  }
+}
+
 
         const dailyTotal = dailyGirlsPresent + dailyBoysPresent;
         el('dailyGirls').textContent = dailyGirlsPresent;
@@ -1357,7 +1427,246 @@ el('reportRange').addEventListener('change', e=>{
   }
 });
 
+// ---------- Populate student dropdown for per-student reports ----------
+function populateStudentReportSelect() {
+  const sel = el('studentReportSelect');
+  sel.innerHTML = '<option value="">— Select student —</option>';
+  if (!studentsCache || studentsCache.length === 0) return;
 
+  // sort students
+  const sorted = [...studentsCache].sort((a,b)=>{
+    const aR = Number(a.roll), bR = Number(b.roll);
+    if (Number.isFinite(aR) && Number.isFinite(bR) && aR!==bR) return aR-bR;
+    if (Number.isFinite(aR) && !Number.isFinite(bR)) return -1;
+    if (!Number.isFinite(aR) && Number.isFinite(bR)) return 1;
+    return (a.name||'').localeCompare(b.name||'');
+  });
+
+  sorted.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.studentId || s.id;
+    o.textContent = `${s.roll ? s.roll + ' • ' : ''}${s.name} ${s.studentId ? '('+s.studentId+')' : ''}`;
+    sel.appendChild(o);
+  });
+}
+
+// attach after loading students
+// inside loadStudentsForClass(...) call populateStudentReportSelect() at the end
+
+// show/hide custom date inputs
+el('studentReportRange').addEventListener('change', (e)=>{
+  const v = e.target.value;
+  el('studentReportStart').classList.toggle('hidden', v!=='custom');
+  el('studentReportEnd').classList.toggle('hidden', v!=='custom');
+});
+
+// helper for ranges
+function resolveStudentRange(range) {
+  const now = new Date();
+  let start = null, end = fmtDate(now);
+  if (range === 'today') start = fmtDate(now);
+  else if (range === 'week'){ const d = new Date(); d.setDate(now.getDate()-6); start = fmtDate(d); }
+  else if (range === 'month'){ const d = new Date(); d.setDate(now.getDate()-29); start = fmtDate(d); }
+  else if (range === 'custom'){ start = el('studentReportStart').value; end = el('studentReportEnd').value || end; }
+  else if (range === 'all') start = '2000-01-01';
+  return { start, end };
+}
+
+// PREVIEW per-student report
+el('generateStudentReport').addEventListener('click', async ()=>{
+  if (!selectedClassId) return toast('Choose class first');
+  const studentId = el('studentReportSelect').value;
+  if (!studentId) return toast('Pick a student');
+  const range = el('studentReportRange').value || 'all';
+  const { start, end } = resolveStudentRange(range);
+  if (!start || !end) return toast('Pick a valid range');
+
+  try {
+    const q = query(collection(db,'attendance'), where('date','>=', start), where('date','<=', end));
+    const aSnap = await getDocs(q);
+    const rows = aSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+                  .filter(r => r.classId === selectedClassId && r.studentId === studentId);
+
+    const student = studentsCache.find(s => (s.studentId||s.id) === studentId) || {studentId};
+
+    // make table
+    let html = `<h4 class="font-semibold">Report — ${escapeHtml(student.name || studentId)}</h4>`;
+    html += `<div class="text-sm mb-2">Range: ${start} → ${end} (${rows.length} records)</div>`;
+    html += `<table class="w-full text-sm border border-gray-300 rounded">
+  <thead class="bg-slate-100 text-left">
+    <tr>
+      <th class="px-3 py-2 border-b">Date</th>
+      <th class="px-3 py-2 border-b text-center">Status</th>
+      <th class="px-3 py-2 border-b">Teacher</th>
+      <th class="px-3 py-2 border-b text-center">Mode</th>
+    </tr>
+  </thead>
+  <tbody>`;
+
+
+    const summary = { present:0, absent:0, late:0 };
+    const byDate = {}; rows.forEach(r => byDate[r.date] = r);
+
+    // loop through dates in range
+    function getDatesBetween(s,e){ const arr=[]; let cur=new Date(s); const last=new Date(e); while(cur<=last){ arr.push(fmtDate(cur)); cur.setDate(cur.getDate()+1);} return arr; }
+    const dates = getDatesBetween(start,end);
+    dates.forEach(d=>{
+      const rec = byDate[d];
+      const status = rec ? (rec.status || 'absent') : 'absent';
+     html += `<tr class="border-b hover:bg-slate-50">
+  <td class="px-3 py-2">${d}</td>
+  <td class="px-3 py-2 text-center">${status}</td>
+  <td class="px-3 py-2">${rec?.teacher || '-'}</td>
+  <td class="px-3 py-2 text-center">${rec?.mode || '-'}</td>
+</tr>`;
+
+      summary[status] = (summary[status]||0)+1;
+    });
+
+    html += `</tbody></table>`;
+    const total = dates.length, present = summary.present||0;
+    const pct = total? ((present/total)*100).toFixed(1)+'%' : '0%';
+    html += `<div class="mt-2 font-semibold">Summary: Total ${total} • Present ${present} • Absent ${summary.absent||0} • Late ${summary.late||0} • Attendance ${pct}</div>`;
+    el('reportArea').innerHTML = html;
+
+  } catch(err){ console.error(err); toast('Error: '+err.message); }
+});
+
+// EXPORT CSV
+el('exportStudentCsv').addEventListener('click', async ()=>{
+  if (!selectedClassId) return toast('Choose class first');
+  const studentId = el('studentReportSelect').value;
+  if (!studentId) return toast('Pick a student');
+
+  const range = el('studentReportRange').value || 'all';
+  const { start, end } = resolveStudentRange(range);
+  if (!start || !end) return toast('Pick a valid range');
+
+  try {
+    const q = query(collection(db,'attendance'),
+      where('date','>=', start),
+      where('date','<=', end)
+    );
+    const aSnap = await getDocs(q);
+    const rows = aSnap.docs.map(d=> ({ id:d.id, ...d.data() }))
+      .filter(r=> r.classId === selectedClassId && r.studentId === studentId);
+
+    const byDate = {};
+    rows.forEach(r=> byDate[r.date] = r);
+
+    function getDatesBetween(s,e){
+      const arr=[]; let cur=new Date(s);
+      const last=new Date(e);
+      while(cur<=last){ arr.push(fmtDate(cur)); cur.setDate(cur.getDate()+1); }
+      return arr;
+    }
+    const dates = getDatesBetween(start,end);
+
+    const student = studentsCache.find(s=> (s.studentId||s.id) === studentId) || {};
+    const header = 'Date,StudentID,StudentName,Status,Teacher,Mode,AttendanceTime\n';
+    const lines = dates.map(d=>{
+      const r = byDate[d];
+      return [
+        d,
+        studentId,
+        student.name || '',
+        r ? r.status : 'absent',
+        r ? (r.teacher||'') : '',
+        r ? (r.mode||'') : '',
+        r ? (r.attendanceTime||'') : ''
+      ].map(escapeCsv).join(',');
+    });
+
+    const blob = new Blob([header + lines.join('\n')], { type:'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `blackhatsheets-student-${studentId}-${start}_to_${end}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    toast('Student CSV exported');
+  } catch(err){
+    console.error(err);
+    toast('CSV export failed: ' + err.message);
+  }
+});
+
+// EXPORT EXCEL
+el('exportStudentExcel').addEventListener('click', async ()=>{
+  if (!selectedClassId) return toast('Choose class first');
+  const studentId = el('studentReportSelect').value;
+  if (!studentId) return toast('Pick a student');
+
+  const range = el('studentReportRange').value || 'all';
+  const { start, end } = resolveStudentRange(range);
+  if (!start || !end) return toast('Pick a valid range');
+
+  try {
+    const q = query(collection(db,'attendance'),
+      where('date','>=', start),
+      where('date','<=', end)
+    );
+    const aSnap = await getDocs(q);
+    const rows = aSnap.docs.map(d=> ({ id:d.id, ...d.data() }))
+      .filter(r=> r.classId === selectedClassId && r.studentId === studentId);
+
+    const byDate = {};
+    rows.forEach(r=> byDate[r.date] = r);
+
+    function getDatesBetween(s,e){
+      const arr=[]; let cur=new Date(s);
+      const last=new Date(e);
+      while(cur<=last){ arr.push(fmtDate(cur)); cur.setDate(cur.getDate()+1); }
+      return arr;
+    }
+    const dates = getDatesBetween(start,end);
+
+    const student = studentsCache.find(s=> (s.studentId||s.id) === studentId) || {};
+
+    // Prepare data for Excel
+    const sheetData = [];
+    sheetData.push([`Student: ${student.name || studentId}`]);
+    sheetData.push([`ID: ${studentId}`, `Roll: ${student.roll||''}`, `Class: ${classesCache.find(c=>c.id===selectedClassId)?.name||''}`]);
+    sheetData.push([]);
+    sheetData.push(['Date','Status','Teacher','Mode','AttendanceTime']);
+
+    dates.forEach(d=>{
+      const r = byDate[d];
+      sheetData.push([
+        d,
+        r ? r.status : 'absent',
+        r ? (r.teacher||'') : '',
+        r ? (r.mode||'') : '',
+        r ? (r.attendanceTime||'') : ''
+      ]);
+    });
+
+    // Add summary row
+    const present = dates.filter(d => byDate[d]?.status === 'present').length;
+    const late = dates.filter(d => byDate[d]?.status === 'late').length;
+    const absent = dates.length - present - late;
+    const pct = dates.length ? ((present/dates.length)*100).toFixed(1)+'%' : '0%';
+
+    sheetData.push([]);
+    sheetData.push([`Total days: ${dates.length}`, `Present: ${present}`, `Absent: ${absent}`, `Late: ${late}`, `Attendance %: ${pct}`]);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Student Report');
+
+    // Download file
+    const fname = `blackhatsheets-student-${studentId}-${start}_to_${end}.xlsx`;
+    XLSX.writeFile(wb, fname);
+
+    toast('Student Excel exported');
+  } catch(err){
+    console.error(err);
+    toast('Excel export failed: ' + err.message);
+  }
+});
 
     (function init(){ el('attendanceDate').value = fmtDate(new Date()); startClassesListener(); })();
 
