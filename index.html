@@ -4,11 +4,12 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SJKMV</title>
+  <title>Digital Register</title>
 
 
   <!-- Primary Meta Tags -->
@@ -171,10 +172,10 @@
   <!-- Text -->
   <div class="text-center sm:text-left">
     <h1 class="text-2xl font-semibold text-slate-800">
-      Sir John Kothalawala Maha Vidyalaya - School Attendance
+      ශ්‍රීමත් ජෝන් කොතලාවල මහා විද්‍යාලය - Digital Register
     </h1>
     <p class="text-sm font-medium text-orange-500 mt-1">
-      Made wit❤️ by <span class="font-semibold">Induwara P. Jayasinghe</span>.
+      Made with ❤️ by <span class="font-semibold">Induwara P. Jayasinghe</span>.
 
     </p>
   </div>
@@ -221,7 +222,7 @@
 
           <div>
             <h3 class="text-sm font-medium">Students</h3>
-            <p class="text-xs text-slate-600">Add students to the selected class. Each student has a unique Student ID (digits and `_` only).</p>
+            <p class="text-xs text-slate-600">Add students to the selected class. Each student has a unique Enrollment No (digits and `_` only).</p>
           </div>
 
           <div id="studentBox">
@@ -235,12 +236,12 @@
           </div>
 
           <form id="studentForm" class="grid grid-cols-1 gap-2">
-            <input id="studentId" placeholder="Student ID (numbers/_ only, auto if empty)" class="border rounded px-3 py-2" />
-            <input id="studentName" placeholder="Student full name" class="border rounded px-3 py-2" required />
-            <input id="studentRoll" placeholder="Roll number / ID (optional)" class="border rounded px-3 py-2" />
-            <input id="studentAddress" placeholder="Address" class="border rounded px-3 py-2" />
+            <input id="studentId" placeholder="Enrollment No / ඇතුළත් වීමේ අංකය" class="border rounded px-3 py-2" />
+            <input id="studentName" placeholder="Full Name / නම" class="border rounded px-3 py-2" required />
+            <input id="studentRoll" placeholder="Enrollment No / ඇතුළත් වීමේ අංකය" class="border rounded px-3 py-2" />
+            <input id="studentAddress" placeholder="Address / ලිපිනය" class="border rounded px-3 py-2" />
             <select id="studentGender" class="border rounded px-3 py-2">
-              <option value="" selected>Select gender (optional)</option>
+              <option value="" selected>Select gender</option>
               <option value="girl">Girl</option>
               <option value="boy">Boy</option>
             </select>
@@ -483,16 +484,16 @@
       </a>
     </div>
 
-    <!-- Bottom note -->
-    <div class="text-center text-xs opacity-70 mt-6">
-      <p>© 2019–2025 Black Hat Developers. All rights reserved.</p>
-      <p class="mt-1">
-        Designed and developed with ❤️ by 
-        <a href="mailto:jmp.induwarapjayasinghe@gmail.com" class="text-gray-300 hover:text-indigo-400 underline">
-          Induwara P. Jayasinghe
-        </a>.
-      </p>
-    </div>
+ <!-- Bottom note -->
+<div class="text-center text-xs mt-6 animate-gradient">
+  <p>© 2019–2025 Black Hat Developers. All rights reserved.</p>
+  <p class="mt-1">
+    Designed and developed with ❤️ by 
+    <a href="mailto:jmp.induwarapjayasinghe@gmail.com" class="plain-link">
+      Induwara P. Jayasinghe
+    </a>.
+  </p>
+</div>
   </div>
 </footer>
 
@@ -1068,7 +1069,7 @@ el('generateReport').addEventListener('click', async () => {
     });
 
     el('reportArea').innerHTML = html || "<p class='text-slate-500'>No records</p>";
-    toast('Register-style report generated');
+    toast('Report generated');
   } catch (err) {
     console.error(err);
     toast('Report failed: ' + err.message);
@@ -1731,7 +1732,32 @@ el('exportStudentExcel').addEventListener('click', async ()=>{
   });
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  /* Neon gradient text effect */
+  .animate-gradient {
+    background: linear-gradient(90deg, #ff00ff, #00ffff, #ffea00, #ff00ff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: neonShift 6s ease infinite;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  @keyframes neonShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Keep link normal (not neon) */
+  .plain-link {
+    color: #e5e7eb; /* soft gray */
+    text-decoration: underline;
+    -webkit-text-fill-color: unset;
+    background: none;
+  }
+</style>
 
 
 </body>
