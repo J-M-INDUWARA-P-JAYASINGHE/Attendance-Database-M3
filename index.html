@@ -313,19 +313,68 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-      <div class="flex gap-2 flex-wrap">
-<button id="eraseClasses" class="px-3 py-2 bg-red-100 text-red-600 rounded">Delete Classes</button>
-<button id="eraseAll" class="px-3 py-2 bg-red-200 text-red-700 rounded">Delete ALL Data</button>
-        <button id="downloadFile" class="px-3 py-2 bg-slate-100 rounded">Download HTML</button>
-        <button id="backupJson" class="px-3 py-2 bg-slate-100 rounded">Backup Data</button>
-<button id="restoreJson" class="px-3 py-2 bg-slate-100 rounded">Restore Backup</button>
-<input id="restoreJsonFile" type="file" accept="application/json" class="hidden" />
+   <div class="flex gap-2 flex-wrap md:justify-start justify-center">
+  <button id="eraseClasses" class="px-3 py-2 bg-red-100 text-red-600 rounded">Delete Classes</button>
+  <button id="eraseAll" class="px-3 py-2 bg-red-200 text-red-700 rounded">Delete ALL Data</button>
+  <button id="downloadFile" class="px-3 py-2 bg-slate-100 rounded">Download HTML</button>
+  <button id="backupJson" class="px-3 py-2 bg-slate-100 rounded">Backup Data</button>
+  <button id="restoreJson" class="px-3 py-2 bg-slate-100 rounded">Restore Backup</button>
+  <input id="restoreJsonFile" type="file" accept="application/json" class="hidden" />
+  <button id="downloadAnalysis" class="px-3 py-2 bg-slate-100 rounded">Download Analysis CSV</button>
+</div>
 
-
-
-        <button id="downloadAnalysis" class="px-3 py-2 bg-slate-100 rounded">Download Analysis CSV</button>
-      </div>
     </header>
+
+
+<!-- 🔹 Quick Summary Boxes -->
+<section id="schoolSummary" 
+  class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 w-full">
+
+  <!-- Total Classes -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">🏫</div>
+    <p class="text-sm text-slate-500 mt-1">Total Classes</p>
+    <h3 id="sumClasses" class="text-2xl font-bold text-indigo-600 mt-2">0</h3>
+  </div>
+
+  <!-- Total Students -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">👩‍🎓</div>
+    <p class="text-sm text-slate-500 mt-1">Total Students</p>
+    <h3 id="sumStudents" class="text-2xl font-bold text-green-600 mt-2">0</h3>
+  </div>
+
+  <!-- Present Today -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">✅</div>
+    <p class="text-sm text-slate-500 mt-1">Present Today</p>
+    <h3 id="sumPresentToday" class="text-2xl font-bold text-green-500 mt-2">0</h3>
+  </div>
+
+  <!-- Absent Today -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">🔴</div>
+    <p class="text-sm text-slate-500 mt-1">Absent Today</p>
+    <h3 id="sumAbsentToday" class="text-2xl font-bold text-red-500 mt-2">0</h3>
+  </div>
+
+  <!-- Late Today -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">🟡</div>
+    <p class="text-sm text-slate-500 mt-1">Late Today</p>
+    <h3 id="sumLateToday" class="text-2xl font-bold text-yellow-500 mt-2">0</h3>
+  </div>
+
+  <!-- Attendance % -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">📊</div>
+    <p class="text-sm text-slate-500 mt-1">Attendance %</p>
+    <h3 id="sumAttendancePct" class="text-2xl font-bold text-blue-600 mt-2">0%</h3>
+  </div>
+
+</section>
+
+
 
     <main class="flex desktop-cols gap-6">
       <!-- Left column: management -->
@@ -1163,24 +1212,36 @@ el('generateReport').addEventListener('click', async () => {
 
       // helper to add a group (boys/girls/unknown)
       function addGroup(title, arr) {
-        if (!arr.length) return;
-        html += `<tr class="bg-slate-100 font-semibold"><td colspan="5" class="px-3 py-2">${title}</td></tr>`;
-        arr.forEach(r => {
-          html += `<tr class="border-b border-slate-200 hover:bg-slate-50">
-            <td class="px-3 py-2">${escapeHtml(r.roll)}</td>
-            <td class="px-3 py-2">${escapeHtml(r.name)}</td>
-            <td class="px-3 py-2 text-center">${escapeHtml(r.status)}</td>
-            <td class="px-3 py-2 text-center">${escapeHtml(r.teacher)}</td>
-            <td class="px-3 py-2 text-center">${escapeHtml(r.mode)}</td>
-          </tr>`;
-        });
-        const present = arr.filter(x => x.status === 'present').length;
-        const absent = arr.filter(x => x.status === 'absent').length;
-        const late = arr.filter(x => x.status === 'late').length;
-        html += `<tr class="font-semibold bg-slate-50">
-          <td colspan="5" class="px-3 py-2 text-right">${title} — Total: ${arr.length} • Present: ${present} • Absent: ${absent} • Late: ${late}</td>
-        </tr>`;
-      }
+  if (!arr.length) return;
+  html += `<tr class="bg-slate-100 font-semibold border border-slate-300">
+    <td colspan="5" class="px-3 py-2">${title}</td>
+  </tr>`;
+  
+  arr.forEach(r => {
+    let rowClass = "";
+    if (r.status === "present") rowClass = "bg-green-100 text-green-700";
+    else if (r.status === "absent") rowClass = "bg-red-100 text-red-700";
+    else if (r.status === "late") rowClass = "bg-yellow-100 text-yellow-700";
+
+    html += `<tr class="border border-slate-300 hover:bg-slate-200 ${rowClass}">
+      <td class="px-3 py-2 border-r border-slate-300">${escapeHtml(r.roll)}</td>
+      <td class="px-3 py-2 border-r border-slate-300">${escapeHtml(r.name)}</td>
+      <td class="px-3 py-2 text-center border-r border-slate-300">${escapeHtml(r.status)}</td>
+      <td class="px-3 py-2 text-center border-r border-slate-300">${escapeHtml(r.teacher)}</td>
+      <td class="px-3 py-2 text-center">${escapeHtml(r.mode)}</td>
+    </tr>`;
+  });
+
+  const present = arr.filter(x => x.status === 'present').length;
+  const absent = arr.filter(x => x.status === 'absent').length;
+  const late = arr.filter(x => x.status === 'late').length;
+  html += `<tr class="font-semibold bg-slate-50 border border-slate-300">
+    <td colspan="5" class="px-3 py-2 text-right">
+      ${title} — Total: ${arr.length} • Present: ${present} • Absent: ${absent} • Late: ${late}
+    </td>
+  </tr>`;
+}
+
 
       // order required: Boys first, then Girls, then Unspecified
       addGroup('👦 Boys', boys);
@@ -1803,6 +1864,60 @@ el('exportStudentExcel').addEventListener('click', async ()=>{
   }
 });
 
+
+
+// ================== Quick School Summary ==================
+function startSchoolSummaryListener() {
+  const today = fmtDate(new Date());
+
+  // --- Total Classes ---
+  onSnapshot(collection(db, 'classes'), snap => {
+    el('sumClasses').textContent = snap.size;
+  });
+
+  // --- Students + Attendance ---
+  onSnapshot(collection(db, 'students'), studentSnap => {
+    const totalStudents = studentSnap.size;
+    el('sumStudents').textContent = totalStudents;
+
+    const studentIds = new Set();
+    studentSnap.forEach(s => studentIds.add(s.id));
+
+    // Attendance for today
+    const q = query(collection(db, 'attendance'), where('date', '==', today));
+    onSnapshot(q, attSnap => {
+      let present = 0, absent = 0, late = 0;
+      const markedIds = new Set();
+
+      attSnap.forEach(doc => {
+        const s = doc.data();
+        markedIds.add(s.studentId);
+
+        if (s.status === 'present') present++;
+        else if (s.status === 'late') late++;
+        else absent++;
+      });
+
+      // Students with no record = absent
+      const unmarked = totalStudents - markedIds.size;
+      absent += unmarked;
+
+      // Update UI
+      el('sumPresentToday').textContent = present;
+      el('sumAbsentToday').textContent = absent;
+      el('sumLateToday').textContent = late;
+
+      // Attendance %
+      const pct = totalStudents > 0 ? ((present / totalStudents) * 100).toFixed(1) : 0;
+      el('sumAttendancePct').textContent = pct + '%';
+    });
+  });
+}
+
+// Call after Firebase init
+startSchoolSummaryListener();
+
+
     (function init(){ el('attendanceDate').value = fmtDate(new Date()); startClassesListener(); })();
 
   </script>
@@ -1892,6 +2007,9 @@ el('exportStudentExcel').addEventListener('click', async ()=>{
     background: none;
   }
 </style>
+
+
+
 
 
 </body>
