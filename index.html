@@ -419,6 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <input id="studentName" placeholder="Full Name / නම" class="border rounded px-3 py-2" required />
             <input id="studentRoll" placeholder="Enrollment No / ඇතුළත් වීමේ අංකය" class="border rounded px-3 py-2" />
             <input id="studentAddress" placeholder="Address / ලිපිනය" class="border rounded px-3 py-2" />
+            <input id="studentBirthday" type="date" placeholder="Birthday / උපන්දිනය" class="border rounded px-3 py-2" />
             <select id="studentGender" class="border rounded px-3 py-2">
               <option value="" selected>Select gender</option>
               <option value="girl">Girl</option>
@@ -709,7 +710,7 @@ document.addEventListener('DOMContentLoaded', function() {
       apiKey: "AIzaSyDrFdwYhlj84GQ3eLzPctLgxZ572PHu7Tg",
       authDomain: "x-clone-d4697.firebaseapp.com",
       projectId: "x-clone-d4697",
-      storageBucket: "x-clone-d4697.firebasestorage.app",
+      storageBucket: "x-clone-d4697.appspot.com",
       messagingSenderId: "438425139174",
       appId: "1:438425139174:web:b1ebea6f124a245cf9c827",
       measurementId: "G-PLQBYNDKQM"
@@ -820,7 +821,8 @@ await renderAttendanceForSelectedDate();
           const li = document.createElement('li');
           li.className='flex items-center justify-between p-2 border rounded';
           const phones = [s.motherMobile, s.fatherMobile].filter(Boolean).join(', ');
-          li.innerHTML = `<div><div class="font-medium">${escapeHtml(s.name)} <span class="text-xs text-slate-500">(${escapeHtml(s.studentId||'')})</span></div><div class="text-xs text-slate-600">Roll: ${escapeHtml(s.roll||'—')} • ${escapeHtml(s.address||'')}</div><div class="text-xs text-slate-600">Parents: ${escapeHtml(phones||'—')}</div></div><div class="flex gap-2"><button data-id="${s.id}" class="editBtn px-2 py-1 text-sm bg-slate-100 rounded">Edit</button><button data-id="${s.id}" class="delBtn px-2 py-1 text-sm bg-red-50 rounded">Delete</button></div>`;
+          li.innerHTML = `<div><div class="font-medium">${escapeHtml(s.name)} <span class="text-xs text-slate-500">(${escapeHtml(s.studentId||'')})</span></div><div class="text-xs text-slate-600">Roll: ${escapeHtml(s.roll||'—')} • ${escapeHtml(s.address||'')}</div><div class="text-xs text-slate-600">Birthday: ${escapeHtml(s.birthday || '—')}</div>
+<div class="text-xs text-slate-600">Parents: ${escapeHtml(phones||'—')}</div></div><div class="flex gap-2"><button data-id="${s.id}" class="editBtn px-2 py-1 text-sm bg-slate-100 rounded">Edit</button><button data-id="${s.id}" class="delBtn px-2 py-1 text-sm bg-red-50 rounded">Delete</button></div>`;
           ul.appendChild(li);
         }
       }
@@ -847,6 +849,7 @@ if (unspecified.length) appendGroup('❓ Unspecified', unspecified);
       el('studentName').value = s.name;
       el('studentRoll').value = s.roll||'';
       el('studentAddress').value = s.address||'';
+      el('studentBirthday').value = s.birthday || '';
       el('studentGender').value = s.gender || '';
       el('motherMobile').value = s.motherMobile||'';
       el('fatherMobile').value = s.fatherMobile||'';
@@ -896,17 +899,42 @@ if (unspecified.length) appendGroup('❓ Unspecified', unspecified);
       const roll = el('studentRoll').value.trim();
       const address = el('studentAddress').value.trim();
       const gender = el('studentGender').value;
+      const birthday = el('studentBirthday').value || null;
       const mother = el('motherMobile').value.trim();
       const father = el('fatherMobile').value.trim();
       if(!name) return toast('Enter name');
 
       try{
         if(editId){
-          await setDoc(doc(db,'students', editId), { studentId: sid, name, roll, address, gender, motherMobile: mother, fatherMobile: father, classId: selectedClassId });
+          await setDoc(doc(db,'students', editId), {
+  studentId: sid,
+  name,
+  roll,
+  address,
+  gender,
+  birthday,
+  motherMobile: mother,
+  fatherMobile: father,
+  classId: selectedClassId
+});
+
           delete el('addStudentBtn').dataset.editId;
           el('addStudentBtn').textContent='Add Student';
         } else {
-          await addDoc(collection(db,'students'), { studentId: sid, name, roll, address, gender, motherMobile: mother, fatherMobile: father, classId: selectedClassId });
+        await addDoc(collection(db,'students'), {
+  studentId: sid,
+  name,
+  roll,
+  address,
+  gender,
+  birthday,
+  motherMobile: mother,
+  fatherMobile: father,
+  classId: selectedClassId
+});
+
+
+
         }
         resetStudentForm();
         await loadStudentsForClass(selectedClassId);
@@ -935,7 +963,19 @@ if (unspecified.length) appendGroup('❓ Unspecified', unspecified);
               let sid = (r.studentId||'').toString().trim();
               if(!sid) sid = await generateUniqueStudentId();
               if(!isValidStudentId(sid) || await checkDuplicateStudentId(sid)) { skipped++; continue; }
-              await addDoc(collection(db,'students'), { studentId: sid, name: (r.name||'').trim(), roll: (r.roll||'').trim(), address: (r.address||'').trim(), gender: (r.gender||'').trim(), motherMobile: (r.motherMobile||'').trim(), fatherMobile: (r.fatherMobile||'').trim(), classId: selectedClassId });
+           await addDoc(collection(db,'students'), {
+  studentId: sid,
+  name: (r.name || '').trim(),
+  roll: (r.roll || '').trim(),
+  address: (r.address || '').trim(),
+  gender: (r.gender || '').trim(),
+  birthday: (r.birthday || '').trim(),
+  motherMobile: (r.motherMobile || '').trim(),
+  fatherMobile: (r.fatherMobile || '').trim(),
+  classId: selectedClassId
+});
+
+
               added++;
             }
             toast(`Imported JSON — added ${added}, skipped ${skipped}`);
@@ -959,7 +999,18 @@ if (unspecified.length) appendGroup('❓ Unspecified', unspecified);
         let sid = (r.studentId||'').toString().trim();
         if(!sid) sid = await generateUniqueStudentId();
         if(!isValidStudentId(sid) || await checkDuplicateStudentId(sid)) { skipped++; continue; }
-        await addDoc(collection(db,'students'), { studentId: sid, name, roll: (r.roll||'').trim(), address: (r.address||'').trim(), gender: (r.gender||'').trim(), motherMobile: (r.motherMobile||'').trim(), fatherMobile: (r.fatherMobile||'').trim(), classId: selectedClassId });
+        await addDoc(collection(db,'students'), { 
+  studentId: sid,
+  name,
+  roll: (r.roll||'').trim(),
+  address: (r.address||'').trim(),
+  gender: (r.gender||'').trim(),
+  birthday: (r.birthday||'').trim(),   // <--- add this line
+  motherMobile: (r.motherMobile||'').trim(),
+  fatherMobile: (r.fatherMobile||'').trim(),
+  classId: selectedClassId
+});
+
         added++;
       }
       toast(`CSV import complete — added ${added}, skipped ${skipped}`);
@@ -2014,6 +2065,5 @@ startSchoolSummaryListener();
 
 </body>
 </html>
-
 
 
