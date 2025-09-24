@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 
 
   <meta charset="utf-8" />
@@ -127,6 +128,19 @@
   }
 }
 
+#liveClock {
+  font-family: 'Orbitron', monospace;
+  letter-spacing: 2px;
+  text-shadow: 0 0 6px #00ff00, 0 0 12px #00ff00; /* neon glow effect */
+}
+
+.blink {
+  animation: blink 1s steps(1, start) infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
 
 
   </style>
@@ -301,11 +315,13 @@ document.addEventListener('DOMContentLoaded', function() {
    <h1 class="text-2xl font-semibold text-slate-800">
   ශ්‍රීමත් ජෝන් කොතලාවල මහා විද්‍යාලය - Digital Register
 </h1>
-<p class="text-sm font-medium text-orange-500 mt-1 flex items-center gap-1">
+<p class="text-sm font-medium mt-1 flex items-center gap-1 justify-center md:justify-start text-center md:text-left 
+   bg-gradient-to-r from-pink-500 via-orange-400 to-purple-500 bg-[length:200%_200%] animate-gradient 
+   text-transparent bg-clip-text font-semibold">
   Made by 
   <img src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" 
        alt="Clidder Icon" class="inline w-4 h-4" />
-   <span class="font-semibold">Induwara P. Jayasinghe</span>.
+  <span class="ml-1">Induwara P. Jayasinghe</span>.
 </p>
 
   </div>
@@ -321,6 +337,10 @@ document.addEventListener('DOMContentLoaded', function() {
   <button id="restoreJson" class="px-3 py-2 bg-slate-100 rounded">Restore Backup</button>
   <input id="restoreJsonFile" type="file" accept="application/json" class="hidden" />
   <button id="downloadAnalysis" class="px-3 py-2 bg-slate-100 rounded">Download Analysis CSV</button>
+<div id="liveClock" 
+     class="hidden md:flex items-center px-4 py-2 bg-black text-green-400 rounded text-lg shadow">
+  00<span class="blink">:</span>00<span class="blink">:</span>00 | 00-00-0000
+</div>
 </div>
 
     </header>
@@ -353,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   <!-- Absent Today -->
   <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
-    <div class="text-3xl">🔴</div>
+    <div class="text-3xl">❌</div>
     <p class="text-sm text-slate-500 mt-1">Absent Today</p>
     <h3 id="sumAbsentToday" class="text-2xl font-bold text-red-500 mt-2">0</h3>
   </div>
@@ -2060,10 +2080,35 @@ startSchoolSummaryListener();
 </style>
 
 
+<script>
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
 
+    document.getElementById("liveClock").innerHTML =
+      `${h}<span class="blink">:</span>${m}<span class="blink">:</span>${s} | ${dd}-${mm}-${yyyy}`;
+  }
 
+  setInterval(updateClock, 1000);
+  updateClock(); // run once on page load
+</script>
+
+<style>
+@keyframes gradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient {
+  animation: gradient 6s ease infinite;
+}
+</style>
 
 </body>
 </html>
-
 
