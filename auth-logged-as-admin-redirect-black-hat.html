@@ -1,0 +1,3356 @@
+<!doctype html>
+<html lang="en">
+<head><link rel="icon" type="image/x-icon" href="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" />
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Digital Register</title>
+
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Digital Register by Induwara Jayasinghe">
+  <meta name="description" content="A modern school attendance management system built by Induwara P. Jayasinghe. Track classes, students, and reports seamlessly.">
+  <meta name="author" content="Induwara P. Jayasinghe">
+  <meta name="keywords" content="School Attendance, Student Management, Induwara Jayasinghe, Class Tracker, Education App">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://sjkmv.vercel.app/"> <!-- Replace with your live site URL -->
+  <meta property="og:title" content="Digital Register by Induwara Jayasinghe">
+  <meta property="og:description" content="Track attendance, manage classes, and generate reports with ease.">
+  <meta property="og:image" content="https://i.ibb.co/rRQTK6Lb/logo-black-hat-tools.png"> <!-- Share preview image -->
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://sjkmv.vercel.app/"> <!-- Replace with your live site URL -->
+  <meta name="twitter:title" content="Digital Register by Induwara Jayasinghe">
+  <meta name="twitter:description" content="A smart and scalable attendance system designed by Induwara P. Jayasinghe.">
+  <meta name="twitter:image" content="https://i.ibb.co/rRQTK6Lb/logo-black-hat-tools.png">
+
+  <!-- Extra -->
+  <meta name="theme-color" content="#6366f1">
+  <link rel="canonical" href="https://clidder.netlify.app/">
+
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PapaParse for robust CSV parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    :root{ --bg:#ffffff; --muted:#6b7280; --card:#ffffff; --accent:#6366f1; }
+    html,body,#app{height:100%}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;background:var(--bg);color:#0f172a}
+    body::before{
+      content:''; position:fixed; inset:0; z-index:-20; background-image:url('https://i.postimg.cc/m2MvsLsW/bgi.jpg'); background-size:cover; background-position:center; filter: saturate(1) contrast(0.95); transform: scale(1.02);
+    }
+    .mica{ background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.64)); box-shadow: 0 8px 24px rgba(15,23,42,0.08); backdrop-filter: blur(10px) saturate(120%); border-radius:1rem; }
+    @media (max-width:900px){ .desktop-cols{ flex-direction:column; } .w-96{ width:100% !important; } }
+    input::placeholder, textarea::placeholder, select:invalid{ color: var(--muted); opacity: 1; }
+    input, textarea, select{ color:#0f172a !important; background:#ffffff !important; position: relative; z-index: 1; }
+    input, textarea { caret-color: #0f172a; }
+    /* Toasts */
+    #toastContainer{ position: fixed; right: 16px; bottom: 16px; z-index: 10000; display:flex; flex-direction:column; gap:8px; }
+
+
+/* === Pure Orange Thin Scrollbar === */
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 6px;              /* thin vertical scrollbar */
+  height: 6px;             /* thin horizontal scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* no background */
+}
+
+::-webkit-scrollbar-thumb {
+  background: orange;      /* pure orange thumb */
+  border-radius: 10px;     /* rounded edges */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: darkorange;  /* slightly darker on hover */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: orange transparent;
+}
+
+
+#downloadFile {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+
+/* Student list height */
+#studentBox {
+  max-height: 48vh;       /* on mobile: 48vh */
+  overflow-y: auto;       /* enable scrolling */
+}
+
+@media (min-width: 768px) {
+  #studentBox {
+    max-height: none;     /* on PC: no height limit */
+    overflow-y: visible;  /* show all students, no scroll */
+  }
+}
+
+/* ===== Attendance Area Height Rules ===== */
+#attendanceArea {
+  min-height: 400px;   /* increased from 260 → 400 */
+  max-height: 50vh;    /* on mobile: half screen height, scrolls if needed */
+  overflow-y: auto;    /* enable scrolling */
+}
+
+/* On desktop (≥1024px), show all students, no scroll */
+@media (min-width: 1024px) {
+  #attendanceArea {
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+}
+
+#liveClock {
+  font-family: 'Orbitron', monospace;
+  letter-spacing: 2px;
+  text-shadow: 0 0 6px #00ff00, 0 0 12px #00ff00; /* neon glow effect */
+}
+
+.blink {
+  animation: blink 1s steps(1, start) infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+
+
+/* Hide all children inside the flex container (buttons + clock) */
+.flex.gap-2.flex-wrap.md\:justify-start.justify-center > * {
+  display: none !important;
+}
+
+/* Hide the entire Register (bulk entries) block */
+h3.font-medium:has(+ p + textarea#registerInput) {
+  display: none !important;
+}
+
+h3.font-medium:has(+ p + textarea#registerInput) ~ * {
+  display: none !important;
+}
+
+
+
+/* Hide the Teachers heading, the add/edit form and the teacher list in the left column */
+aside > div:has(> h3.text-sm.font-medium) { display: none !important; } /* the "Teachers" heading block */
+aside #teacherForm { display: none !important; }                       /* the form to add/edit teachers */
+aside #teacherList { display: none !important; }                       /* the list of teachers */
+
+
+
+  </style>
+</head>
+<body>
+
+
+<!-- Splash Screen -->
+<div id="splashScreen" style="
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: #f9fafb; /* Light background */
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.6s ease;
+">
+  <img src="https://i.ibb.co/rRQTK6Lb/logo-black-hat-tools.png" alt="Clidder Logo" style="width: 110px; height: 110px;" />
+  <div style="position: absolute; bottom: 40px; text-align: center; font-family: 'Helvetica Neue', sans-serif; font-size: 1rem; font-weight: 600; line-height: 1.4;">
+    <div style="color: #374151;">from</div>
+    <div style="background: linear-gradient(90deg, #6366f1, #FF7D1E, #ec4899); -webkit-background-clip: text; color: transparent; -webkit-text-fill-color: transparent;">
+      INDUWARA JAYASINGHE
+    </div>
+  </div>
+</div>
+
+
+  
+<!-- LOGIN OVERLAY (inserted by Assistant) -->
+<!-- Fullscreen Twitter-style Auth Modal -->
+<div id="loginOverlay" aria-modal="true" role="dialog"
+     class="fixed inset-0 bg-black flex flex-col md:flex-row w-full h-full z-50 overflow-auto text-white font-sans hidden">
+
+  <!-- Left panel (logo, hidden on mobile) -->
+  <div class="hidden md:flex flex-col items-center justify-center w-1/2 bg-black text-center px-4">
+    <img src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp"
+         alt="Clidder Logo"
+         class="w-72 h-72" />
+  </div>
+
+  <!-- Right panel (form) -->
+  <div class="flex flex-col justify-center items-center w-full md:w-1/2 px-6 sm:px-10 py-10 relative bg-black text-white">
+    <div class="w-full max-w-md space-y-6 text-center md:text-left">
+
+      <h1 class="text-5xl font-extrabold leading-tight text-white">Digital Register</h1>
+      <h2 class="text-2xl font-bold text-[#ff7d1e]">From Induwara Jayasinghe</h2>
+
+      <!-- Form -->
+      <input id="loginUser"
+             type="text"
+             placeholder="Username"
+             maxlength="100"
+             class="w-full bg-black border border-gray-600 text-white rounded-full px-4 py-3 focus:border-[#ff7d1e] focus:ring-2 focus:ring-[#ff7d1e] outline-none transition" />
+
+      <input id="loginPass"
+             type="password"
+             placeholder="Password"
+             maxlength="100"
+             class="w-full bg-black border border-gray-600 text-white rounded-full px-4 py-3 focus:border-[#ff7d1e] focus:ring-2 focus:ring-[#ff7d1e] outline-none transition" />
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button id="loginSubmit"
+                class="flex-1 bg-[#ff7d1e] hover:bg-[#e66e0f] text-white py-3 rounded-full font-semibold transition">
+          Sign In
+        </button>
+        <button id="loginClear"
+                class="flex-1 border border-gray-600 text-white py-3 rounded-full font-semibold hover:bg-gray-900 transition">
+          Clear
+        </button>
+      </div>
+
+      <div id="loginError" class="text-red-500 text-sm text-center hidden">
+        Invalid username or password.
+      </div>
+
+      <p class="text-center text-sm text-gray-400">
+        Software by
+        <a href="http://induwarajayasinghe.netlify.app/" class="text-[#ff7d1e] hover:underline font-semibold">Induwara Jayasinghe</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Center form vertically & horizontally on mobile */
+  @media (max-width: 768px) {
+    #loginOverlay {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #loginOverlay .right {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+    }
+    #loginOverlay .right > div {
+      text-align: center;
+    }
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const overlay = document.getElementById('loginOverlay');
+  const appEl = document.getElementById('app');
+  const LOGIN_USER = 'LogAsAdmin';
+  const LOGIN_PASS = 'InduwaraPJayasinghe';
+
+  // show login overlay after splash fades out
+  const splash = document.getElementById('splashScreen');
+  if (splash) {
+    const observer = new MutationObserver(() => {
+      if (splash.style.display === 'none' || splash.style.opacity === '0') {
+        overlay.style.display = 'flex';
+        observer.disconnect();
+      }
+    });
+    observer.observe(splash, { attributes: true, attributeFilter: ['style'] });
+  } else {
+    overlay.style.display = 'flex';
+  }
+
+  const userInput = document.getElementById('loginUser');
+  const passInput = document.getElementById('loginPass');
+  const loginError = document.getElementById('loginError');
+
+  document.getElementById('loginClear').addEventListener('click', () => {
+    userInput.value = '';
+    passInput.value = '';
+    loginError.style.display = 'none';
+    userInput.focus();
+  });
+
+  document.getElementById('loginSubmit').addEventListener('click', () => {
+    const u = userInput.value.trim();
+    const p = passInput.value;
+    if (u === LOGIN_USER && p === LOGIN_PASS) {
+      overlay.style.display = 'none';
+      if (appEl) appEl.style.filter = 'none';
+    } else {
+      loginError.style.display = 'block';
+      setTimeout(()=> loginError.style.display = 'none', 3500);
+    }
+  });
+
+  [userInput, passInput].forEach(el => {
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('loginSubmit').click();
+    });
+  });
+});
+</script>
+<!-- END LOGIN OVERLAY -->
+<div id="app" class="min-h-screen p-4 md:p-6 flex flex-col gap-6">
+    <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+     <!-- Full-width Card Header with Rounded Corners -->
+<div onclick="window.open('http://induwarajayasinghe.netlify.app/', '_blank')" 
+     class="w-full bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer transition hover:shadow-md">
+
+  <div class="flex flex-col items-center justify-center text-center py-10 px-6">
+
+    <!-- Logo -->
+    <img src="https://i.ibb.co/rRQTK6Lb/logo-black-hat-tools.png" 
+         alt="School Logo" 
+         class="w-20 h-20 object-contain mb-4" />
+
+    <!-- Title -->
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 tracking-tight">
+      ශ්‍රීමත් ජෝන් කොතලාවල මහා විද්‍යාලය
+    </h1>
+    <h2 class="text-lg md:text-xl text-gray-600 font-medium mt-1">
+      Digital Register
+    </h2>
+
+    <!-- Credit -->
+    <p class="text-sm mt-4 flex items-center gap-2 text-gray-500">
+      <span>Made by</span>
+      <img src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" 
+           alt="Clidder Icon" class="w-4 h-4" />
+      <span class="font-semibold text-gray-700">Induwara P. Jayasinghe</span>
+    </p>
+
+  </div>
+</div>
+
+
+
+
+
+   <div class="flex gap-2 flex-wrap md:justify-start justify-center">
+  <button id="eraseClasses" class="px-3 py-2 bg-red-100 text-red-600 rounded">Delete Classes</button>
+  <button id="eraseAll" class="px-3 py-2 bg-red-200 text-red-700 rounded">Delete ALL Data</button>
+  <button id="downloadFile" class="px-3 py-2 bg-slate-100 rounded">Download HTML</button>
+  <button id="backupJson" class="px-3 py-2 bg-slate-100 rounded">Backup Data</button>
+  <button id="restoreJson" class="px-3 py-2 bg-slate-100 rounded">Restore Backup</button>
+  <input id="restoreJsonFile" type="file" accept="application/json" class="hidden" />
+  <button id="downloadAnalysis" class="px-3 py-2 bg-slate-100 rounded">Download Analysis CSV</button>
+<div id="liveClock" 
+     class="hidden md:flex items-center px-4 py-2 bg-black text-green-400 rounded text-lg shadow">
+  00<span class="blink">:</span>00<span class="blink">:</span>00 | 00-00-0000
+</div>
+</div>
+
+    </header>
+
+
+<!-- 🔹 Quick Summary Boxes -->
+<section id="schoolSummary" 
+  class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 w-full">
+
+  <!-- Total Classes -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">🏫</div>
+    <p class="text-sm text-slate-500 mt-1">Total Classes</p>
+    <h3 id="sumClasses" class="text-2xl font-bold text-indigo-600 mt-2">0</h3>
+  </div>
+
+  <!-- Total Students -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">👩‍🎓</div>
+    <p class="text-sm text-slate-500 mt-1">Total Students</p>
+    <h3 id="sumStudents" class="text-2xl font-bold text-green-600 mt-2">0</h3>
+  </div>
+
+  <!-- Present Today -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">✅</div>
+    <p class="text-sm text-slate-500 mt-1">Present Today</p>
+    <h3 id="sumPresentToday" class="text-2xl font-bold text-green-500 mt-2">0</h3>
+  </div>
+
+  <!-- Absent Today -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">❌</div>
+    <p class="text-sm text-slate-500 mt-1">Absent Today</p>
+    <h3 id="sumAbsentToday" class="text-2xl font-bold text-red-500 mt-2">0</h3>
+  </div>
+
+  <!-- Late Today -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">🟡</div>
+    <p class="text-sm text-slate-500 mt-1">Late Today</p>
+    <h3 id="sumLateToday" class="text-2xl font-bold text-yellow-500 mt-2">0</h3>
+  </div>
+
+  <!-- Attendance % -->
+  <div class="mica p-4 rounded-xl shadow flex flex-col items-center text-center">
+    <div class="text-3xl">📊</div>
+    <p class="text-sm text-slate-500 mt-1">Attendance %</p>
+    <h3 id="sumAttendancePct" class="text-2xl font-bold text-blue-600 mt-2">0%</h3>
+  </div>
+
+</section>
+
+
+
+    <main class="flex desktop-cols gap-6">
+      <!-- Left column: management -->
+      <aside class="w-96 mica p-4 flex-shrink-0">
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-medium">Class & Students</h2>
+              <p class="text-xs text-slate-600">Create classes, add students, bulk import</p>
+            </div>
+            <div class="text-xs text-slate-600">Classes: <span id="classCount">0</span></div>
+          </div>
+
+         <div class="grid grid-cols-1 gap-2">
+  <input id="className" placeholder="Class name (e.g., Grade 10A)" class="border rounded px-3 py-2" />
+  <input id="subjectName" placeholder="Subject (e.g., Biology)" class="border rounded px-3 py-2" />
+  
+  <input id="classPassword" type="password" placeholder="Set password" 
+         class="border rounded px-3 py-2" />
+  <input id="classPasswordConfirm" type="password" placeholder="Confirm password" 
+         class="border rounded px-3 py-2" />
+
+  <div class="flex gap-2">
+    <button id="addClassBtn" class="flex-1 px-3 py-2 bg-indigo-600 text-white rounded">Add Class</button>
+    <button id="clearClassBtn" class="px-3 py-2 bg-white border rounded">Clear</button>
+  </div>
+</div>
+
+
+          <hr/>
+
+          <div>
+            <h3 class="text-sm font-medium">Students</h3>
+            <p class="text-xs text-slate-600">Add students to the selected class. Each student has a unique Enrollment No (digits and `_` only).</p>
+          </div>
+
+          <div id="studentBox">
+  <ul id="studentList" class="space-y-2"></ul>
+</div>
+
+
+          <div class="mt-2 p-2 bg-slate-50 rounded text-sm">
+            👧 Girls: <span id="totalGirls">0</span> • 👦 Boys: <span id="totalBoys">0</span><br>
+            📊 Total (Girls+Boys): <span id="totalStudents">0</span> • Average: <span id="avgStudents">0</span>
+          </div>
+
+          <form id="studentForm" class="grid grid-cols-1 gap-2">
+            <input id="studentId" placeholder="Enrollment No / ඇතුළත් වීමේ අංකය" class="border rounded px-3 py-2" />
+            <input id="studentName" placeholder="Full Name / නම" class="border rounded px-3 py-2" required />
+            <input id="studentRoll" placeholder="Enrollment No / ඇතුළත් වීමේ අංකය" class="border rounded px-3 py-2" />
+            <input id="studentAddress" placeholder="Address / ලිපිනය" class="border rounded px-3 py-2" />
+            <input id="studentBirthday" type="date" placeholder="Birthday / උපන්දිනය" class="border rounded px-3 py-2" />
+            <select id="studentGender" class="border rounded px-3 py-2">
+              <option value="" selected>Select gender</option>
+              <option value="girl">Girl</option>
+              <option value="boy">Boy</option>
+            </select>
+            <input id="studentPhoto" placeholder="Profile Photo URL" class="border rounded px-3 py-2" />
+            <div class="grid grid-cols-2 gap-2">
+              <input id="motherMobile" placeholder="Mother's mobile" class="border rounded px-3 py-2" />
+              <input id="fatherMobile" placeholder="Father's mobile" class="border rounded px-3 py-2" />
+            </div>
+            <div class="flex gap-2">
+              <button id="addStudentBtn" type="submit" class="flex-1 px-3 py-2 bg-green-600 text-white rounded">Add Student</button>
+              <button id="importCsvBtn" type="button" class="px-3 py-2 bg-white border rounded">Import CSV/JSON</button>
+              <input id="importCsvFile" type="file" accept="text/csv,application/json" class="hidden" />
+            </div>
+          </form>
+
+
+
+<button id="openStudentDetailsBtn"
+  class="px-4 py-2 bg-orange-500 text-white rounded-lg shadow hover:bg-orange-600 active:scale-95 transition w-full sm:w-auto">
+  🎓 Manage Student Details
+</button>
+
+
+
+
+<!-- ===== Add Marksheet Button (place near toolbar) ===== -->
+<button id="openMarksheetBtn"
+  class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg shadow hover:scale-105 transition">
+  ➕ Add Marksheet
+</button>
+
+          <div class="text-xs text-slate-600">Tap a student to edit; delete removes attendance also.</div>
+        </div>
+<hr class="my-4"/>
+
+<div>
+  <h3 class="text-sm font-medium">Teachers</h3>
+  <p class="text-xs text-slate-600">Add, edit, or remove teachers. Stored in Firestore as <code>teachers</code>.</p>
+</div>
+
+<form id="teacherForm" class="grid grid-cols-1 gap-2 mt-2">
+  <input id="teacherId" placeholder="Teacher ID (digits/_ only)" class="border rounded px-3 py-2" />
+
+  <input id="teacherName" placeholder="Full Name" class="border rounded px-3 py-2" required />
+  <input id="teacherSubject" placeholder="Subject(s)" class="border rounded px-3 py-2" />
+  <input id="teacherPhone" placeholder="Phone Number" class="border rounded px-3 py-2" />
+  <input id="teacherEmail" placeholder="Email" type="email" class="border rounded px-3 py-2" />
+  <input id="teacherAddress" placeholder="Address" class="border rounded px-3 py-2" />
+  <input id="teacherQualification" placeholder="Qualification" class="border rounded px-3 py-2" />
+  <input id="teacherExperience" type="number" placeholder="Years of Experience" class="border rounded px-3 py-2" />
+  
+  <select id="teacherGender" class="border rounded px-3 py-2">
+    <option value="" selected>Select Gender</option>
+    <option value="male">Male</option>
+    <option value="female">Female</option>
+    <option value="other">Other</option>
+  </select>
+
+  <input id="teacherBirthday" type="date" class="border rounded px-3 py-2" />
+
+  <div class="flex gap-2">
+    <button id="addTeacherBtn" type="submit" class="flex-1 px-3 py-2 bg-purple-600 text-white rounded">
+      Add Teacher
+    </button>
+    <button id="clearTeacherBtn" type="button" class="px-3 py-2 bg-white border rounded">Clear</button>
+  </div>
+</form>
+
+<!-- Teacher list -->
+<div id="teacherList" class="mt-3 grid gap-3"></div>
+
+      </aside>
+
+      <!-- Right column: attendance and reports -->
+      <section class="flex-1 mica p-4 flex flex-col gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div>
+            <label class="text-xs">Class</label>
+            <select id="selectClass" class="border rounded px-3 py-2 w-full"></select>
+          </div>
+
+          <div>
+            <label class="text-xs">Date</label>
+            <input id="attendanceDate" type="date" class="border rounded px-3 py-2 w-full" />
+          </div>
+
+          <div>
+            <label class="text-xs">Teacher</label>
+            <input id="teacherName" placeholder="Teacher name (optional)" class="border rounded px-3 py-2 w-full" />
+          </div>
+
+          <div>
+            <label class="text-xs">Mode</label>
+            <select id="attendanceMode" class="border rounded px-3 py-2 w-full">
+              <option value="in-class">In-class</option>
+              <option value="online">Online</option>
+              <option value="field">Field</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="markAllPresent" class="px-3 py-2 bg-green-500 text-white rounded flex-1">All Present</button>
+          <button id="markAllAbsent" class="px-3 py-2 bg-red-500 text-white rounded flex-1">All Absent</button>
+          <button id="saveAttendance" class="px-3 py-2 bg-indigo-600 text-white rounded flex-1">Save Attendance</button>
+        </div>
+
+        <div id="attendanceArea" class="overflow-auto border rounded"></div>
+
+
+        <div class="grid grid-cols-3 gap-3 mt-2">
+          <div class="p-3 rounded bg-green-50">Present: <span id="sumPresent" class="font-semibold">0</span></div>
+          <div class="p-3 rounded bg-red-50">Absent: <span id="sumAbsent" class="font-semibold">0</span></div>
+          <div class="p-3 rounded bg-yellow-50">Late: <span id="sumLate" class="font-semibold">0</span></div>
+        </div>
+
+        <div class="p-3 bg-slate-100 rounded text-sm">
+          📅 Daily Totals → 👧 Girls Present: <span id="dailyGirls">0</span> • 👦 Boys Present: <span id="dailyBoys">0</span> • 📊 Total Present: <span id="dailyTotal">0</span> • Average: <span id="dailyAvg">0</span>
+        </div>
+
+        <hr/>
+
+        <!-- Reports Section -->
+<div class="p-4 bg-white border rounded-lg shadow-sm flex flex-col md:flex-row md:items-center gap-4">
+  <!-- Left controls -->
+  <div class="flex flex-wrap items-center gap-3">
+    <label for="reportRange" class="text-sm font-medium">Reports</label>
+    <select id="reportRange" class="border rounded-lg px-3 py-2 text-sm">
+      <option value="today">Today</option>
+      <option value="week">This Week</option>
+      <option value="month">This Month</option>
+      <option value="term">This Term</option>
+      <option value="custom">Custom Range</option>
+    </select>
+    <input id="reportStart" type="date" class="border rounded-lg px-3 py-2 text-sm hidden"/>
+    <input id="reportEnd" type="date" class="border rounded-lg px-3 py-2 text-sm hidden"/>
+    <button id="generateReport" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+      Generate
+    </button>
+  </div>
+
+  <!-- Right buttons -->
+  <div class="flex gap-2 md:ml-auto">
+
+    <button id="exportJson" class="px-4 py-2 bg-white border rounded-lg text-sm hover:bg-gray-50">Export JSON</button>
+    <button id="exportCsv" class="px-4 py-2 bg-white border rounded-lg text-sm hover:bg-gray-50">Export CSV</button>
+    <button id="downloadExcel" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">
+      Download Excel
+    </button>
+  </div>
+</div>
+
+<!-- Per-Student Report Section -->
+<div class="mt-4 p-4 bg-white border rounded-lg shadow-sm flex flex-col md:flex-row md:items-center gap-4">
+  <!-- Student select -->
+  <div class="flex items-center gap-2 w-full md:w-auto">
+    <label for="studentReportSelect" class="text-sm font-medium">Student</label>
+    <select id="studentReportSelect" class="border rounded-lg px-3 py-2 text-sm w-full md:w-auto">
+      <option value="">— Select student —</option>
+    </select>
+  </div>
+
+  <!-- Range select -->
+  <div class="flex items-center gap-2 w-full md:w-auto">
+    <label for="studentReportRange" class="text-sm font-medium">Range</label>
+    <select id="studentReportRange" class="border rounded-lg px-3 py-2 text-sm w-full md:w-auto">
+      <option value="all">All</option>
+      <option value="today">Today</option>
+      <option value="week">Last 7 days</option>
+      <option value="month">Last 30 days</option>
+      <option value="custom">Custom</option>
+    </select>
+    <input id="studentReportStart" type="date" class="border rounded-lg px-3 py-2 text-sm hidden"/>
+    <input id="studentReportEnd" type="date" class="border rounded-lg px-3 py-2 text-sm hidden"/>
+  </div>
+
+  <!-- Buttons -->
+  <div class="flex flex-wrap gap-2 md:ml-auto">
+    <button id="generateStudentReport" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+      Preview
+    </button>
+    <button id="exportStudentCsv" class="px-4 py-2 bg-white border rounded-lg text-sm hover:bg-gray-50">
+      Export CSV
+    </button>
+    <button id="exportStudentExcel" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">
+      Export Excel
+    </button>
+  </div>
+</div>
+
+
+
+       <div id="reportArea" class="mt-2 overflow-auto border rounded p-2 bg-white"></div>
+
+
+        <hr/>
+        <div>
+          <h3 class="font-medium">Register (bulk entries)</h3>
+          <p class="text-xs text-slate-600">Add or paste many attendance records (CSV or JSON). Use PapaParse-friendly CSV with headers or JSON array.</p>
+          <textarea id="registerInput" placeholder="Paste CSV rows like: date,roll,status (e.g. 2025-09-19,12,present) or JSON array" class="w-full border rounded p-3 mt-2" style="min-height:120px"></textarea>
+          <div class="flex gap-2 mt-2">
+            <button id="applyRegister" class="px-3 py-2 bg-indigo-600 text-white rounded">Apply Register</button>
+            <button id="clearRegister" class="px-3 py-2 bg-white border rounded">Clear</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+   <footer class="bg-slate-900 text-white p-8 mt-8" style="border-radius:10px;">
+  <div class="max-w-6xl mx-auto flex flex-col gap-8">
+
+    <!-- About -->
+    <div class="text-center">
+      <h2 class="text-xl font-bold tracking-wide">Induwara Jayasinghe</h2>
+      <p class="text-sm opacity-80 mt-2 leading-relaxed max-w-3xl mx-auto">
+        Founder & CEO of <span class="font-semibold">Black Hat Inc, Clidder LLC, Cllipora LLC, BH Developers, and C Shot LLC</span>.<br>
+        Visionary entrepreneur and tech innovator dedicated to excellence, innovation, 
+        and empowering communities through technology.
+      </p>
+    </div>
+<center>Let's Collaborate</center>
+    <!-- Social grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-5 max-w-5xl w-full mx-auto">
+      
+      <a href="https://t.me/induwarapjayasinghe" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-telegram-plane text-blue-400 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">Telegram</span>
+      </a>
+
+      <a href="https://github.com/J-M-INDUWARA-P-JAYASINGHE" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-github text-gray-300 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">GitHub</span>
+      </a>
+
+      <a href="https://lk.linkedin.com/in/induwara-jayasinghe" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-linkedin-in text-blue-500 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">LinkedIn</span>
+      </a>
+
+      <a href="https://whatsapp.com/channel/0029Vb6NS7GKGGGKLui7cE0N" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-whatsapp text-green-500 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">WhatsApp</span>
+      </a>
+
+      <a href="https://clidder.netlify.app/" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <img src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" alt="Clidder" class="w-6 h-6" />
+        <span class="font-semibold text-lg text-gray-200">Clidder</span>
+      </a>
+
+      <a href="https://www.facebook.com/profile.php?id=61575061977120" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-facebook-f text-blue-600 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">Facebook</span>
+      </a>
+
+      <a href="https://x.com/JPM_INDUWARA" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-x-twitter text-white text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">X</span>
+      </a>
+
+      <a href="https://www.youtube.com/@INDUWARAPJAYASINGHE" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-youtube text-red-600 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">YouTube</span>
+      </a>
+
+      <a href="https://www.instagram.com/induwara_p_jayasinghe/#" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-instagram text-pink-500 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">Instagram</span>
+      </a>
+
+      <a href="https://pin.it/6Cq2oliNP" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-pinterest-p text-red-500 text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">Pinterest</span>
+      </a>
+
+      <a href="https://www.threads.net/@induwara_p_jayasinghe" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-threads text-white text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">Threads</span>
+      </a>
+
+      <a href="http://tiktok.com/@induwarapjayasinghe" target="_blank" rel="noopener noreferrer"
+         class="flex items-center justify-center gap-3 px-6 py-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition w-full">
+        <i class="fab fa-tiktok text-white text-xl"></i>
+        <span class="font-semibold text-lg text-gray-200">TikTok</span>
+      </a>
+    </div>
+
+ <!-- Bottom note -->
+<div class="text-center text-xs mt-6 animate-gradient">
+  <p>© 2019–2025 Black Hat Developers. All rights reserved.</p>
+  <p class="mt-1 flex items-center gap-1 justify-center">
+  Designed and developed by 
+  <img src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" 
+       alt="Clidder Icon" class="inline w-4 h-4" />
+  
+  <a href="mailto:jmp.induwarapjayasinghe@gmail.com" class="plain-link">
+    Induwara P. Jayasinghe
+  </a>.
+</p>
+
+</div>
+  </div>
+</footer>
+
+  </div>
+
+  <!-- Toast container (non-blocking) -->
+  <div id="toastContainer" aria-live="polite"></div>
+
+  <script type="module">
+    // ---------- Firebase imports ----------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      setDoc,
+      getDocs,
+      doc,
+      deleteDoc,
+      query,
+      where,
+      onSnapshot,
+      writeBatch,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    // ---------- Firebase config ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyDrFdwYhlj84GQ3eLzPctLgxZ572PHu7Tg",
+      authDomain: "x-clone-d4697.firebaseapp.com",
+      projectId: "x-clone-d4697",
+      storageBucket: "x-clone-d4697.appspot.com",
+      messagingSenderId: "438425139174",
+      appId: "1:438425139174:web:b1ebea6f124a245cf9c827",
+      measurementId: "G-PLQBYNDKQM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    try{ getAnalytics(app); }catch(e){}
+    const db = getFirestore(app);
+
+    // ---------- Helpers & state ----------
+    const el = id => document.getElementById(id);
+    const fmtDate = d => (new Date(d)).toISOString().split('T')[0];
+    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function toast(msg, timeout=3500){
+      const container = el('toastContainer');
+      const div = document.createElement('div');
+      div.className = 'px-4 py-2 bg-slate-800 text-white rounded shadow';
+      div.textContent = msg;
+      container.appendChild(div);
+      setTimeout(()=> div.classList.add('fade-out'), timeout-300);
+      setTimeout(()=> div.remove(), timeout);
+    }
+
+    let classesCache = [];
+    let studentsCache = [];
+    let selectedClassId = null;
+
+    // ---------- Utility functions ----------
+    function isValidStudentId(id){ return /^[0-9_]+$/.test(id); }
+    function escapeCsv(v){ return '"' + String(v||'').replace(/"/g,'""') + '"'; }
+
+    async function checkDuplicateStudentId(studentId, excludeDocId = null){
+      if(!studentId) return false;
+      const q = query(collection(db,'students'), where('studentId','==', studentId));
+      const snap = await getDocs(q);
+      if(snap.empty) return false;
+      if(excludeDocId){
+        return snap.docs.some(d => d.id !== excludeDocId);
+      }
+      return true;
+    }
+
+    async function generateUniqueStudentId(){
+      for(let i=0;i<100;i++){
+        const candidate = String(Math.floor(Math.random()*900000) + 100000);
+        if(!await checkDuplicateStudentId(candidate)) return candidate;
+      }
+      return '_' + Math.random().toString(36).slice(2,10);
+    }
+
+// -------- Teacher Utilities --------
+function isValidTeacherId(id) {
+  return /^[0-9_]+$/.test(id);
+}
+
+async function checkDuplicateTeacherId(tid, excludeDocId = null) {
+  if (!tid) return false;
+  const q = query(collection(db, "teachers"), where("teacherId", "==", tid));
+  const snap = await getDocs(q);
+  if (snap.empty) return false;
+  if (excludeDocId) {
+    return snap.docs.some((d) => d.id !== excludeDocId);
+  }
+  return true;
+}
+
+async function generateUniqueTeacherId() {
+  for (let i = 0; i < 100; i++) {
+    const candidate = String(Math.floor(Math.random() * 900000) + 100000);
+    if (!(await checkDuplicateTeacherId(candidate))) return candidate;
+  }
+  return "_" + Math.random().toString(36).slice(2, 8);
+}
+
+
+    // ---------- Classes ----------
+    el('addClassBtn').addEventListener('click', async ()=> {
+  const name = el('className').value.trim(); 
+  const subject = el('subjectName').value.trim();
+  const password = el('classPassword').value.trim();
+  const confirm = el('classPasswordConfirm').value.trim();
+
+  if (!name) return toast('Enter class name');
+  if (!password) return toast('Enter a password for this class');
+  if (password !== confirm) return toast('Passwords do not match');
+
+  try {
+    await addDoc(collection(db,'classes'), { 
+      name, 
+      subject, 
+      password,   // 🔐 store password
+      createdAt: serverTimestamp() 
+    });
+
+    // Clear inputs
+    el('className').value='';
+    el('subjectName').value='';
+    el('classPassword').value='';
+    el('classPasswordConfirm').value='';
+    
+    toast('Class added with password');
+  } catch(err){ 
+    console.error(err); 
+    toast('Add class failed: '+err.message); 
+  }
+});
+
+    el('clearClassBtn').addEventListener('click', ()=>{ el('className').value=''; el('subjectName').value=''; });
+
+    function startClassesListener(){
+      onSnapshot(collection(db,'classes'), snap => {
+        classesCache = snap.docs.map(d=> ({ id: d.id, ...d.data() }));
+        renderClassSelector();
+      }, err => { console.error('classes listen', err); toast('Classes listener error'); });
+    }
+
+    function renderClassSelector(){
+      const sel = el('selectClass'); sel.innerHTML = '<option value="">— Select class —</option>';
+      classesCache.forEach(c=>{ const o = document.createElement('option'); o.value = c.id; o.textContent = `${c.name}${c.subject? ' — '+c.subject : ''}`; sel.appendChild(o); });
+      el('classCount').textContent = classesCache.length;
+    }
+
+    el('selectClass').addEventListener('change', async (e)=> {
+  selectedClassId = e.target.value || null;
+  resetStudentForm();
+
+  if (!selectedClassId) {
+    studentsCache = [];
+    renderStudents();
+    renderAttendanceForSelectedDate();
+    return;
+  }
+
+  // Show password modal before loading
+  const modal = el('classPasswordModal');
+  const input = el('classPasswordInput');
+  const error = el('classPasswordError');
+  modal.classList.remove('hidden');
+  input.value = '';
+  error.classList.add('hidden');
+
+  // fetch stored password for this class
+  const classDoc = classesCache.find(c => c.id === selectedClassId);
+  const requiredPassword = classDoc?.password || '';
+
+  function closeModal() {
+    modal.classList.add('hidden');
+  }
+
+  el('cancelClassPassword').onclick = () => {
+    e.target.value = ''; // reset select back
+    selectedClassId = null;
+    closeModal();
+  };
+
+  el('submitClassPassword').onclick = async () => {
+    if (input.value === requiredPassword) {
+      closeModal();
+      await loadStudentsForClass(selectedClassId);
+    } else {
+      error.classList.remove('hidden');
+    }
+  };
+});
+
+
+    // ---------- Students ----------
+    async function loadStudentsForClass(classId){
+      try{
+        const q = query(collection(db,'students'), where('classId','==', classId));
+        const snap = await getDocs(q);
+        studentsCache = snap.docs.map(d=> ({ id: d.id, ...d.data() }));
+        studentsCache.sort((a,b)=> (String(a.roll||'')).localeCompare(String(b.roll||'')) || a.name.localeCompare(b.name));
+        renderStudents();
+populateStudentReportSelect();   // <--- add this line
+await renderAttendanceForSelectedDate();
+
+      }catch(err){ console.error(err); toast('Load students failed: '+err.message); }
+    }
+
+    function renderStudents(){
+      const ul = el('studentList'); ul.innerHTML='';
+      if(!studentsCache.length){ ul.innerHTML = '<li class="p-2 text-slate-500">No students — add or import</li>';
+        el('totalGirls').textContent = 0; el('totalBoys').textContent = 0; el('totalStudents').textContent = 0; el('avgStudents').textContent = 0; return; }
+
+      const girls = studentsCache.filter(s => String(s.gender||'').toLowerCase() === 'girl');
+      const boys  = studentsCache.filter(s => String(s.gender||'').toLowerCase() === 'boy');
+      const unspecified = studentsCache.filter(s => !s.gender || (String(s.gender||'').toLowerCase() !== 'girl' && String(s.gender||'').toLowerCase() !== 'boy'));
+
+      function appendGroup(title, arr){
+        if(!arr.length) return;
+        const header = document.createElement('li');
+        header.className = 'font-semibold mt-2';
+        header.textContent = title;
+        ul.appendChild(header);
+        for(const s of arr){
+          const li = document.createElement('li');
+          li.className='flex items-center justify-between p-2 border rounded';
+          const phones = [s.motherMobile, s.fatherMobile].filter(Boolean).join(', ');
+          li.innerHTML = `
+  <div class="w-full max-w-md bg-white border border-slate-200 rounded-lg shadow-sm p-4 flex flex-col items-center">
+    
+    <!-- Photo -->
+    <img src="${escapeHtml(s.photo || 'https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp')}" 
+         alt="Profile"
+         class="w-20 h-20 rounded-full object-cover border border-slate-300 shadow mb-3" />
+
+    <!-- Name (centered, bold, only if exists) -->
+    ${s.name 
+      ? `<div class="text-lg font-bold text-slate-800 text-center mb-3">${escapeHtml(s.name)}</div>` 
+      : ``}
+
+    <!-- Info (all other details) -->
+    <div class="w-full space-y-1 text-sm text-slate-700">
+      <p><span class="font-medium text-slate-900">Student ID:</span> ${escapeHtml(s.studentId || '—')}</p>
+      <p><span class="font-medium text-slate-900">Roll No:</span> ${escapeHtml(s.roll || '—')}</p>
+      <p><span class="font-medium text-slate-900">Address:</span> ${escapeHtml(s.address || '—')}</p>
+      <p><span class="font-medium text-slate-900">Birthday:</span> ${escapeHtml(s.birthday || '—')}</p>
+      <p><span class="font-medium text-slate-900">Parents' Contact:</span> ${escapeHtml(phones || '—')}</p>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-2 mt-4 w-full">
+      <button data-id="${s.id}" 
+              class="editBtn px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
+        Edit
+      </button>
+      <button data-id="${s.id}" 
+              class="delBtn px-3 py-1.5 rounded-md bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition">
+        Delete
+      </button>
+
+<button data-id="${s.id}" 
+        class="viewSummaryBtn px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition">
+  View Profile
+</button>
+
+
+    </div>
+  </div>
+`;
+
+          ul.appendChild(li);
+        }
+      }
+
+      appendGroup('👦 Boys', boys);
+appendGroup('👧 Girls', girls);
+if (unspecified.length) appendGroup('❓ Unspecified', unspecified);
+
+
+      ul.querySelectorAll('.editBtn').forEach(b=> b.addEventListener('click', e=> startEditStudent(e.target.dataset.id)));
+      ul.querySelectorAll('.delBtn').forEach(b=> b.addEventListener('click', e=> deleteStudent(e.target.dataset.id)));
+
+      el('totalGirls').textContent = girls.length;
+      el('totalBoys').textContent = boys.length;
+      const totalGB = girls.length + boys.length;
+      el('totalStudents').textContent = totalGB;
+      el('avgStudents').textContent = classesCache.length>0? (totalGB/classesCache.length).toFixed(1) : 0;
+    }
+
+    function startEditStudent(id){
+      const s = studentsCache.find(x=>x.id===id);
+      if(!s) return;
+      el('studentId').value = s.studentId||'';
+      el('studentName').value = s.name;
+      el('studentRoll').value = s.roll||'';
+      el('studentAddress').value = s.address||'';
+      el('studentBirthday').value = s.birthday || '';
+      el('studentGender').value = s.gender || '';
+      el('motherMobile').value = s.motherMobile||'';
+      el('fatherMobile').value = s.fatherMobile||'';
+        el('studentPhoto').value = s.photo || '';
+      el('addStudentBtn').textContent='Save';
+      el('addStudentBtn').dataset.editId = id;
+      el('studentName').focus();
+    }
+
+    async function deleteStudent(id){
+      const s = studentsCache.find(x=>x.id===id);
+      if(!s) return;
+      if(!confirm('Delete student and attendance?')) return;
+      try{
+        await deleteDoc(doc(db,'students', id));
+        // delete attendance for student using studentId (custom)
+        if(s.studentId){
+          const snap = await getDocs(query(collection(db,'attendance'), where('studentId','==', s.studentId)));
+          if(!snap.empty){
+            const batch = writeBatch(db);
+            snap.docs.forEach(d=> batch.delete(doc(db,'attendance', d.id)));
+            await batch.commit();
+          }
+        }
+        toast('Deleted');
+        await loadStudentsForClass(selectedClassId);
+      }catch(err){ console.error(err); toast('Delete failed: '+err.message); }
+    }
+
+    // ---------- Add / Edit Student form ----------
+    el('studentForm').addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      if(!selectedClassId) return toast('Select a class first');
+
+      const editId = el('addStudentBtn').dataset.editId || null;
+
+      let sid = el('studentId').value.trim();
+      if(!sid){
+        sid = await generateUniqueStudentId();
+      }
+
+      if(!isValidStudentId(sid)) return toast('Invalid ID — only digits and underscore (_) allowed.');
+
+      // uniqueness check
+      if(await checkDuplicateStudentId(sid, editId)) return toast('Student ID already in use');
+
+      const name = el('studentName').value.trim();
+      const roll = el('studentRoll').value.trim();
+      const address = el('studentAddress').value.trim();
+      const gender = el('studentGender').value;
+      const birthday = el('studentBirthday').value || null;
+      const mother = el('motherMobile').value.trim();
+      const father = el('fatherMobile').value.trim();
+      const photo = el('studentPhoto').value.trim();
+      if(!name) return toast('Enter name');
+
+      try{
+        if(editId){
+          await setDoc(doc(db,'students', editId), {
+  studentId: sid,
+  name,
+  roll,
+  address,
+  gender,
+  birthday,
+  motherMobile: mother,
+  fatherMobile: father,
+  photo,
+  classId: selectedClassId
+});
+
+          delete el('addStudentBtn').dataset.editId;
+          el('addStudentBtn').textContent='Add Student';
+        } else {
+        await addDoc(collection(db,'students'), {
+  studentId: sid,
+  name,
+  roll,
+  address,
+  gender,
+  birthday,
+  motherMobile: mother,
+  fatherMobile: father,
+  classId: selectedClassId
+});
+
+
+
+        }
+        resetStudentForm();
+        await loadStudentsForClass(selectedClassId);
+        toast('Student saved');
+      }catch(err){ console.error(err); toast('Save failed: '+err.message); }
+    });
+
+    function resetStudentForm(){
+      el('studentForm').reset();
+      el('addStudentBtn').textContent='Add Student';
+      delete el('addStudentBtn').dataset.editId;
+    }
+
+    // CSV/JSON import (students) - uses PapaParse for robust parsing
+    el('importCsvBtn').addEventListener('click', ()=> el('importCsvFile').click());
+    el('importCsvFile').addEventListener('change', async (ev)=>{
+      const f = ev.target.files[0]; if(!f) return; if(!selectedClassId) return toast('Choose class first');
+      const txt = await f.text();
+
+      if(f.type.includes('json') || f.name.endsWith('.json')){
+        try{
+          const parsed = JSON.parse(txt);
+          if(Array.isArray(parsed)){
+            let added=0, skipped=0;
+            for(const r of parsed){
+              let sid = (r.studentId||'').toString().trim();
+              if(!sid) sid = await generateUniqueStudentId();
+              if(!isValidStudentId(sid) || await checkDuplicateStudentId(sid)) { skipped++; continue; }
+           await addDoc(collection(db,'students'), {
+  studentId: sid,
+  name: (r.name || '').trim(),
+  roll: (r.roll || '').trim(),
+  address: (r.address || '').trim(),
+  gender: (r.gender || '').trim(),
+  birthday: (r.birthday || '').trim(),
+  motherMobile: (r.motherMobile || '').trim(),
+  fatherMobile: (r.fatherMobile || '').trim(),
+  classId: selectedClassId
+});
+
+
+              added++;
+            }
+            toast(`Imported JSON — added ${added}, skipped ${skipped}`);
+            await loadStudentsForClass(selectedClassId);
+            ev.target.value = '';
+            return;
+          }
+        } catch(e){ toast('Invalid JSON'); ev.target.value = ''; return; }
+      }
+
+      // CSV parsing via PapaParse (handles quotes, commas)
+      const parsed = Papa.parse(txt.trim(), { header: true, skipEmptyLines: true });
+      if(parsed.errors && parsed.errors.length){
+        console.warn('CSV parse errors', parsed.errors);
+      }
+      const rows = parsed.data;
+      if(rows.length === 0) return toast('Empty CSV');
+      let added=0, skipped=0;
+      for(const r of rows){
+        const name = (r.name||'').trim(); if(!name) continue;
+        let sid = (r.studentId||'').toString().trim();
+        if(!sid) sid = await generateUniqueStudentId();
+        if(!isValidStudentId(sid) || await checkDuplicateStudentId(sid)) { skipped++; continue; }
+        await addDoc(collection(db,'students'), { 
+  studentId: sid,
+  name,
+  roll: (r.roll||'').trim(),
+  address: (r.address||'').trim(),
+  gender: (r.gender||'').trim(),
+  birthday: (r.birthday||'').trim(),   // <--- add this line
+  motherMobile: (r.motherMobile||'').trim(),
+  fatherMobile: (r.fatherMobile||'').trim(),
+  classId: selectedClassId
+});
+
+        added++;
+      }
+      toast(`CSV import complete — added ${added}, skipped ${skipped}`);
+      await loadStudentsForClass(selectedClassId);
+      ev.target.value = '';
+    });
+
+
+
+
+    // ---------- Attendance ----------
+    function makeAttendanceRow(s, status='absent'){
+      const wrapper = document.createElement('div'); wrapper.className='flex items-center gap-3 p-2 border-b';
+      const sid = s.studentId || '';
+      const phones = [s.motherMobile, s.fatherMobile].filter(Boolean).join(', ');
+      wrapper.innerHTML = `<div class="w-16 text-sm text-slate-600">${escapeHtml(s.roll||'')}</div><div class="flex-1"><div class="font-medium">${escapeHtml(s.name)}</div><div class="text-xs text-slate-600">ID: ${escapeHtml(sid)} ${phones? ' • ' + escapeHtml(phones): ''}</div></div><div class="flex items-center gap-3"><label class="flex items-center gap-1"><input type="radio" name="att-${sid}" value="present"> Present</label><label class="flex items-center gap-1"><input type="radio" name="att-${sid}" value="absent"> Absent</label><label class="flex items-center gap-1"><input type="radio" name="att-${sid}" value="late"> Late</label></div>`;
+      const checked = wrapper.querySelector(`input[name="att-${sid}"][value="${status}"]`);
+      if(checked) checked.checked = true;
+      else {
+        const def = wrapper.querySelector(`input[name="att-${sid}"][value="absent"]`);
+        if(def) def.checked = true;
+      }
+      return wrapper;
+    }
+
+    async function renderAttendanceForSelectedDate(){
+      if(!selectedClassId){ el('attendanceArea').innerHTML = '<div class="p-3 text-slate-500">Select a class</div>'; return; }
+      const date = el('attendanceDate').value || fmtDate(new Date());
+      el('attendanceDate').value = date;
+      if(!studentsCache || studentsCache.length===0) await loadStudentsForClass(selectedClassId);
+      const area = el('attendanceArea'); area.innerHTML='';
+
+      try{
+        // ---- CHANGED: query by DATE only, then filter by classId (avoids composite-index requirement) ----
+        const q = query(collection(db,'attendance'), where('date','==', date));
+        const snap = await getDocs(q);
+        const rows = snap.docs.map(d=> ({ id: d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+        const map = new Map();
+        rows.forEach(r => { if(r && r.studentId) map.set(r.studentId, r); });
+        // -----------------------------------------------------------------------------------------------
+
+        // group students by gender
+        const girls = studentsCache.filter(s => String(s.gender||'').toLowerCase() === 'girl');
+        const boys  = studentsCache.filter(s => String(s.gender||'').toLowerCase() === 'boy');
+        const unspecified = studentsCache.filter(s => !s.gender || (String(s.gender||'').toLowerCase() !== 'girl' && String(s.gender||'').toLowerCase() !== 'boy'));
+
+        let dailyGirlsPresent = 0;
+        let dailyBoysPresent = 0;
+
+        function appendGroupHeader(title){
+          const h = document.createElement('div'); h.className = 'p-2 font-semibold bg-slate-50'; h.textContent = title; area.appendChild(h);
+        }
+        if (boys.length) {
+  appendGroupHeader('👦 Boys');
+  for (const s of boys) {
+    const rec = map.get(s.studentId);
+    const status = rec ? rec.status : 'absent';
+    if (status === 'present') dailyBoysPresent++;
+    area.appendChild(makeAttendanceRow(s, status));
+  }
+}
+
+if (girls.length) {
+  appendGroupHeader('👧 Girls');
+  for (const s of girls) {
+    const rec = map.get(s.studentId);
+    const status = rec ? rec.status : 'absent';
+    if (status === 'present') dailyGirlsPresent++;
+    area.appendChild(makeAttendanceRow(s, status));
+  }
+}
+
+if (unspecified.length) {
+  appendGroupHeader('❓ Unspecified');
+  for (const s of unspecified) {
+    const rec = map.get(s.studentId);
+    const status = rec ? rec.status : 'absent';
+    area.appendChild(makeAttendanceRow(s, status));
+  }
+}
+
+
+        const dailyTotal = dailyGirlsPresent + dailyBoysPresent;
+        el('dailyGirls').textContent = dailyGirlsPresent;
+        el('dailyBoys').textContent = dailyBoysPresent;
+        el('dailyTotal').textContent = dailyTotal;
+        el('dailyAvg').textContent = studentsCache.length>0? ((dailyTotal/studentsCache.length)*100).toFixed(1) + '%' : '0%';
+
+        renderSummaryFromMap(map);
+      }catch(err){ console.error(err); toast('Load attendance failed: '+err.message); }
+    }
+
+    function readAttendance(){
+      const date = el('attendanceDate').value || fmtDate(new Date());
+      const teacher = el('teacherName').value.trim() || null;
+      const mode = el('attendanceMode').value || null;
+      const nowIso = new Date().toISOString();
+      const records = [];
+      for(const s of studentsCache){
+        const sid = s.studentId || '';
+        const checked = document.querySelector(`input[name="att-${sid}"]:checked`);
+        const status = checked? checked.value : 'absent';
+        records.push({ studentId: sid, date, status, classId: selectedClassId, teacher, mode, attendanceTime: nowIso, updatedAt: serverTimestamp() });
+      }
+      return records;
+    }
+
+    el('attendanceDate').addEventListener('change', ()=> renderAttendanceForSelectedDate());
+    el('markAllPresent').addEventListener('click', ()=> { el('attendanceArea').querySelectorAll('input[value=present]').forEach(i=>i.checked=true); });
+    el('markAllAbsent').addEventListener('click', ()=> { el('attendanceArea').querySelectorAll('input[value=absent]').forEach(i=>i.checked=true); });
+
+    el('saveAttendance').addEventListener('click', async ()=>{ 
+      if(!selectedClassId) return toast('Choose class'); 
+      const date = el('attendanceDate').value; 
+      if(!date) return toast('Pick date'); 
+      const records = readAttendance(); 
+      try{ 
+        // Use Promise.all with setDoc per student (id is composite date_studentId)
+        await Promise.all(records.map(r=> setDoc(doc(db,'attendance', `${r.date}_${r.studentId}`), r))); 
+        toast('Saved for '+date); 
+        await renderAttendanceForSelectedDate(); 
+      }catch(err){ console.error(err); toast('Save failed: '+err.message); } 
+    });
+
+    function renderSummaryFromMap(map){
+      const sum = { present:0, absent:0, late:0 };
+      for(const s of studentsCache){
+        const rec = map.get(s.studentId);
+        const st = rec? rec.status : 'absent';
+        sum[st] = (sum[st]||0)+1;
+      }
+      el('sumPresent').textContent = sum.present;
+      el('sumAbsent').textContent = sum.absent;
+      el('sumLate').textContent = sum.late;
+    }
+
+    // ---------- Reports & analysis ----------
+    function calcStartDateForRange(range){
+      const now = new Date();
+      if(range === 'today') return fmtDate(now);
+      if(range === '7days'){ const d = new Date(); d.setDate(d.getDate()-6); return fmtDate(d); }
+      if(range === '30days'){ const d = new Date(); d.setDate(d.getDate()-29); return fmtDate(d); }
+      // 'term' fallback — use distant past
+      return '2000-01-01';
+    }
+
+    // NOTE: Changed to query by DATE range only and then filter by classId client-side
+    // This avoids Firestore composite-index requirement when combining classId + range
+// REPLACE the old generateReport handler with this entire block:
+el('generateReport').addEventListener('click', async () => {
+  if (!selectedClassId) return toast('Choose class');
+
+  // Determine date range
+  const range = el('reportRange').value;
+  const now = new Date();
+  let start, end = fmtDate(now);
+
+  if (range === 'today') {
+    start = fmtDate(now);
+  } else if (range === 'week') {
+    const d = new Date(); d.setDate(now.getDate() - 6); start = fmtDate(d);
+  } else if (range === 'month') {
+    const d = new Date(); d.setDate(now.getDate() - 29); start = fmtDate(d);
+  } else if (range === 'term') {
+    start = '2000-01-01';
+  } else if (range === 'custom') {
+    start = el('reportStart').value;
+    end = el('reportEnd').value || end;
+    if (!start || !end) return toast('Pick start and end dates for custom range');
+  } else {
+    // fallback to last 7 days
+    const d = new Date(); d.setDate(now.getDate() - 6); start = fmtDate(d);
+  }
+
+  try {
+    // fetch attendance records in the range (filtered by class client-side)
+    const q = query(collection(db, 'attendance'), where('date', '>=', start), where('date', '<=', end));
+    const aSnap = await getDocs(q);
+    const rows = aSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+
+    // build a map: attendanceMap[date][studentId] => record
+    const attendanceMap = {};
+    rows.forEach(r => {
+      if (!attendanceMap[r.date]) attendanceMap[r.date] = {};
+      attendanceMap[r.date][r.studentId] = r;
+    });
+
+    // helper: get list of date strings between start and end (inclusive)
+    function getDatesBetween(s, e) {
+      const arr = [];
+      let cur = new Date(s);
+      const last = new Date(e);
+      while (cur <= last) {
+        arr.push(fmtDate(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+      return arr;
+    }
+
+    // ensure studentsCache is loaded and sorted (roll numeric first, then name)
+    if (!studentsCache || studentsCache.length === 0) {
+      await loadStudentsForClass(selectedClassId);
+    }
+    const sortStudents = (a, b) => {
+      const aRoll = Number(a.roll);
+      const bRoll = Number(b.roll);
+      const aIsNum = Number.isFinite(aRoll);
+      const bIsNum = Number.isFinite(bRoll);
+      if (aIsNum && bIsNum && aRoll !== bRoll) return aRoll - bRoll;
+      if (aIsNum && !bIsNum) return -1;
+      if (!aIsNum && bIsNum) return 1;
+      return (a.name || '').localeCompare(b.name || '');
+    };
+    const studentsSorted = [...studentsCache].sort(sortStudents);
+
+    const dates = getDatesBetween(start, end);
+    if (dates.length === 0) return el('reportArea').innerHTML = "<p class='text-slate-500'>No dates in range</p>";
+
+    let html = '';
+
+    dates.forEach(date => {
+  const day = new Date(date).getDay(); // 0=Sunday, 6=Saturday
+
+  // If weekend → show only day name, skip students
+  if (day === 0 || day === 6) {
+    const dayName = day === 0 ? "Sunday" : "Saturday";
+    html += `<h4 class="font-semibold mt-4 mb-2">📅 ${date}</h4>`;
+    html += `<table class="w-full text-sm border border-slate-300 rounded-lg mb-4">
+      <tr class="bg-slate-100 font-semibold">
+        <td class="px-3 py-2 text-center">${dayName}</td>
+      </tr>
+    </table>`;
+    return; // stop here for weekends
+  }
+
+  // 👇 keep your existing code (boys/girls/unknown etc.)
+  const boys = [];
+  const girls = [];
+  const unknown = [];
+
+
+      for (const s of studentsSorted) {
+        const rec = attendanceMap[date] && attendanceMap[date][s.studentId];
+        const status = rec ? (rec.status || 'absent') : 'absent';
+        const teacher = rec ? (rec.teacher || '-') : '-';
+        const mode = rec ? (rec.mode || '-') : '-';
+        const row = { roll: s.roll || '', name: s.name || s.studentId || '', status, teacher, mode };
+
+        const g = String(s.gender || '').toLowerCase();
+        if (g === 'boy') boys.push(row);
+        else if (g === 'girl') girls.push(row);
+        else unknown.push(row);
+      }
+
+      // header for the date
+      html += `<h4 class="font-semibold mt-4 mb-2">📅 ${date}</h4>`;
+      html += `<table class="w-full text-sm border border-slate-300 rounded-lg mb-4">
+        <thead class="bg-slate-200">
+          <tr>
+            <th class="px-3 py-2 text-left">Roll</th>
+            <th class="px-3 py-2 text-left">Student</th>
+            <th class="px-3 py-2 text-center">Status</th>
+            <th class="px-3 py-2 text-center">Teacher</th>
+            <th class="px-3 py-2 text-center">Mode</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      // helper to add a group (boys/girls/unknown)
+      function addGroup(title, arr) {
+  if (!arr.length) return;
+  html += `<tr class="bg-slate-100 font-semibold border border-slate-300">
+    <td colspan="5" class="px-3 py-2">${title}</td>
+  </tr>`;
+  
+  arr.forEach(r => {
+    let rowClass = "";
+    if (r.status === "present") rowClass = "bg-green-100 text-green-700";
+    else if (r.status === "absent") rowClass = "bg-red-100 text-red-700";
+    else if (r.status === "late") rowClass = "bg-yellow-100 text-yellow-700";
+
+    html += `<tr class="border border-slate-300 hover:bg-slate-200 ${rowClass}">
+      <td class="px-3 py-2 border-r border-slate-300">${escapeHtml(r.roll)}</td>
+      <td class="px-3 py-2 border-r border-slate-300">${escapeHtml(r.name)}</td>
+      <td class="px-3 py-2 text-center border-r border-slate-300">${escapeHtml(r.status)}</td>
+      <td class="px-3 py-2 text-center border-r border-slate-300">${escapeHtml(r.teacher)}</td>
+      <td class="px-3 py-2 text-center">${escapeHtml(r.mode)}</td>
+    </tr>`;
+  });
+
+  const present = arr.filter(x => x.status === 'present').length;
+  const absent = arr.filter(x => x.status === 'absent').length;
+  const late = arr.filter(x => x.status === 'late').length;
+  html += `<tr class="font-semibold bg-slate-50 border border-slate-300">
+    <td colspan="5" class="px-3 py-2 text-right">
+      ${title} — Total: ${arr.length} • Present: ${present} • Absent: ${absent} • Late: ${late}
+    </td>
+  </tr>`;
+}
+
+
+      // order required: Boys first, then Girls, then Unspecified
+      addGroup('👦 Boys', boys);
+      addGroup('👧 Girls', girls);
+      addGroup('❓ Unspecified', unknown);
+
+      // Grand total for date
+      const total = boys.length + girls.length + unknown.length;
+      const totalPresent = boys.filter(x => x.status === 'present').length
+        + girls.filter(x => x.status === 'present').length
+        + unknown.filter(x => x.status === 'present').length;
+      const totalAbsent = total - totalPresent - (boys.filter(x=>x.status==='late').length + girls.filter(x=>x.status==='late').length + unknown.filter(x=>x.status==='late').length);
+      const totalLate = boys.filter(x=>x.status==='late').length + girls.filter(x=>x.status==='late').length + unknown.filter(x=>x.status==='late').length;
+
+      html += `<tr class="font-bold bg-indigo-50">
+        <td colspan="5" class="px-3 py-2 text-right">All Students Total: ${total} • Present: ${totalPresent} • Absent: ${totalAbsent} • Late: ${totalLate}</td>
+      </tr>`;
+
+      html += `</tbody></table>`;
+    });
+
+    el('reportArea').innerHTML = html || "<p class='text-slate-500'>No records</p>";
+    toast('Report generated');
+  } catch (err) {
+    console.error(err);
+    toast('Report failed: ' + err.message);
+  }
+});
+
+
+// Download register-style report as nicely formatted Excel
+el("downloadExcel").addEventListener("click", async () => {
+  if (!selectedClassId) return toast("Choose class first");
+
+  const now = new Date();
+  const fileName = `blackhatsheets-${fmtDate(now)}.xlsx`;
+
+  // same range as report
+  const range = el("reportRange").value;
+  let start, end = fmtDate(now);
+  if (range === "today") {
+    start = fmtDate(now);
+  } else if (range === "week") {
+    const d = new Date(); d.setDate(now.getDate() - 6); start = fmtDate(d);
+  } else if (range === "month") {
+    const d = new Date(); d.setDate(now.getDate() - 29); start = fmtDate(d);
+  } else if (range === "term") {
+    start = "2000-01-01";
+  } else if (range === "custom") {
+    start = el("reportStart").value;
+    end = el("reportEnd").value || end;
+  }
+
+  // fetch attendance
+  const q = query(collection(db, "attendance"), where("date", ">=", start), where("date", "<=", end));
+  const aSnap = await getDocs(q);
+  const rows = aSnap.docs.map(d => ({ ...d.data() })).filter(r => r.classId === selectedClassId);
+
+  // build map: attendanceMap[date][studentId]
+  const attendanceMap = {};
+  rows.forEach(r => {
+    if (!attendanceMap[r.date]) attendanceMap[r.date] = {};
+    attendanceMap[r.date][r.studentId] = r;
+  });
+
+  // ensure students list
+  if (!studentsCache || studentsCache.length === 0) {
+    await loadStudentsForClass(selectedClassId);
+  }
+  const studentsSorted = [...studentsCache].sort((a, b) => {
+    const aRoll = Number(a.roll), bRoll = Number(b.roll);
+    if (aRoll && bRoll) return aRoll - bRoll;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+
+  // helper: dates between start and end
+  function getDatesBetween(s, e) {
+    const arr = [];
+    let cur = new Date(s), last = new Date(e);
+    while (cur <= last) {
+      arr.push(fmtDate(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return arr;
+  }
+  const dates = getDatesBetween(start, end);
+
+  // Excel workbook
+  const wb = XLSX.utils.book_new();
+  let sheetData = [];
+  let rowStyles = {};
+
+  dates.forEach(date => {
+  const day = new Date(date).getDay(); // 0=Sunday, 6=Saturday
+
+  // If weekend → add only day name and skip students
+  if (day === 0 || day === 6) {
+    const dayName = day === 0 ? "Sunday" : "Saturday";
+    sheetData.push([`Date: ${date} (${dayName})`]);
+    return; // stop here for weekends
+  }
+
+  const startRow = sheetData.length + 1;
+  // date header
+  sheetData.push([`Date: ${date}`]);
+
+    rowStyles[sheetData.length] = { bold: true, fontSize: 14 };
+
+    // headers
+    sheetData.push(["Roll", "Student", "Status", "Teacher", "Mode"]);
+    rowStyles[sheetData.length] = { bold: true, bg: "DDDDDD" };
+
+    const boys = [], girls = [], unknown = [];
+    for (const s of studentsSorted) {
+      const rec = attendanceMap[date] && attendanceMap[date][s.studentId];
+      const status = rec ? (rec.status || "absent") : "absent";
+      const teacher = rec ? (rec.teacher || "-") : "-";
+      const mode = rec ? (rec.mode || "-") : "-";
+      const row = [s.roll || "", s.name || s.studentId, status, teacher, mode];
+      const g = String(s.gender || "").toLowerCase();
+      if (g === "boy") boys.push(row);
+      else if (g === "girl") girls.push(row);
+      else unknown.push(row);
+    }
+
+    function addGroup(title, arr, color) {
+      if (!arr.length) return;
+      sheetData.push([title]);
+      rowStyles[sheetData.length] = { bold: true, bg: color };
+      arr.forEach(r => sheetData.push(r));
+      const total = arr.length;
+      const present = arr.filter(r => r[2] === "present").length;
+      const absent = arr.filter(r => r[2] === "absent").length;
+      const late = arr.filter(r => r[2] === "late").length;
+      sheetData.push([`${title} Total: ${total} • Present: ${present} • Absent: ${absent} • Late: ${late}`]);
+      rowStyles[sheetData.length] = { bold: true, bg: "F3F3F3" };
+    }
+
+    addGroup("👦 Boys", boys, "CCE5FF");   // light blue
+    addGroup("👧 Girls", girls, "F8D7DA"); // light pink
+    addGroup("❓ Unspecified", unknown, "E2E3E5"); // light gray
+
+    const all = [...boys, ...girls, ...unknown];
+    const total = all.length;
+    const present = all.filter(r => r[2] === "present").length;
+    const absent = all.filter(r => r[2] === "absent").length;
+    const late = all.filter(r => r[2] === "late").length;
+    sheetData.push([`All Students Total: ${total} • Present: ${present} • Absent: ${absent} • Late: ${late}`]);
+    rowStyles[sheetData.length] = { bold: true, bg: "D6EAF8" };
+
+    sheetData.push([]); // blank row between dates
+  });
+
+  // create worksheet
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+  // apply styles (basic: bold + fill color)
+  Object.entries(rowStyles).forEach(([r, style]) => {
+    const rowIndex = parseInt(r);
+    const row = sheetData[rowIndex - 1];
+    for (let c = 0; c < (row?.length || 1); c++) {
+      const cellRef = XLSX.utils.encode_cell({ r: rowIndex - 1, c });
+      if (!ws[cellRef]) continue;
+      ws[cellRef].s = {
+        font: { bold: style.bold || false, sz: style.fontSize || 11 },
+        fill: style.bg ? { fgColor: { rgb: style.bg } } : undefined
+      };
+    }
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws, "Report");
+  XLSX.writeFile(wb, fileName);
+  toast("Excel downloaded: " + fileName);
+});
+
+
+    // Export JSON (full for current class)
+    el('exportJson').addEventListener('click', async ()=>{ 
+      if(!selectedClassId) return toast('Choose class');
+      try{
+        // ---- CHANGED: fetch attendance collection and filter client-side to avoid index requirement ----
+        const [sSnap, aSnapAll, cSnap] = await Promise.all([ getDocs(query(collection(db,'students'), where('classId','==', selectedClassId))), getDocs(collection(db,'attendance')), getDocs(collection(db,'classes')) ]);
+        const aSnap = aSnapAll.docs.map(d=> ({ id:d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+        const data = { classes: cSnap.docs.map(d=> ({ id:d.id, ...d.data() })), students: sSnap.docs.map(d=> ({ id:d.id, ...d.data() })), attendance: aSnap };
+        const blob = new Blob([JSON.stringify(data,null,2)], { type:'application/json' });
+        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'attendance-full-export.json'; document.body.appendChild(a); a.click(); a.remove();
+        toast('Exported JSON');
+      }catch(err){ console.error(err); toast('Export failed: '+err.message); } 
+    });
+
+    // Export CSV (flat per date) for current class only
+    el('exportCsv').addEventListener('click', async ()=>{ 
+      if(!selectedClassId) return toast('Choose class');
+      try{
+        const [sSnap,aSnapAll] = await Promise.all([ getDocs(query(collection(db,'students'), where('classId','==', selectedClassId))), getDocs(collection(db,'attendance')) ]);
+        const studs = sSnap.docs.map(d=> ({ id:d.id, ...d.data() }));
+        const atts = aSnapAll.docs.map(d=> ({ id:d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+        const rows = ['Class,StudentID,StudentRoll,StudentName,Date,Status,Teacher,AttendanceTime,MotherMobile,FatherMobile,Address'].concat(atts.map(r=>{
+          const st = studs.find(s=>s.studentId===r.studentId) || {};
+          return `${escapeCsv(st.classId||'')},${escapeCsv(st.studentId||'')},${escapeCsv(st.roll||'')},${escapeCsv(st.name||'')},${r.date},${r.status},${escapeCsv(r.teacher||'')},${escapeCsv(r.attendanceTime||'')},${escapeCsv(st.motherMobile||'')},${escapeCsv(st.fatherMobile||'')},${escapeCsv(st.address||'')}`;
+        }));
+        const blob = new Blob([rows.join('\n')], { type:'text/csv' });
+        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='attendance.csv'; document.body.appendChild(a); a.click(); a.remove();
+        toast('CSV exported');
+      }catch(err){ console.error(err); toast('CSV export failed: '+err.message); } 
+    });
+
+    // Download analysis CSV (aggregated per student for selected class & range)
+    el('downloadAnalysis').addEventListener('click', async ()=> {
+      if(!selectedClassId) return toast('Choose class');
+      const range = el('reportRange').value || '30days';
+      const start = calcStartDateForRange(range);
+      const end = fmtDate(new Date());
+      try{
+        // Query by date range only, then filter by classId to avoid index requirement
+        const snap = await getDocs(query(collection(db,'attendance'), where('date','>=', start), where('date','<=', end)));
+        const rows = snap.docs.map(d=> ({ id:d.id, ...d.data() })).filter(r => r.classId === selectedClassId);
+        const agg = {};
+        rows.forEach(r=>{ if(!agg[r.studentId]) agg[r.studentId] = { present:0, absent:0, late:0 }; agg[r.studentId][r.status] = (agg[r.studentId][r.status]||0)+1; });
+        const header = 'StudentID,StudentRoll,StudentName,Present,Absent,Late,MotherMobile,FatherMobile,Address\n';
+        const lines = studentsCache.map(s=>{ const a = agg[s.studentId]||{present:0,absent:0,late:0}; return `${escapeCsv(s.studentId||'')},${escapeCsv(s.roll||'')},${escapeCsv(s.name)},${a.present},${a.absent},${a.late},${escapeCsv(s.motherMobile||'')},${escapeCsv(s.fatherMobile||'')},${escapeCsv(s.address||'')}`; });
+        const blob = new Blob([header + lines.join('\n')], { type:'text/csv' });
+        const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='analysis.csv'; document.body.appendChild(a); a.click(); a.remove();
+        toast('Analysis downloaded');
+      }catch(err){ console.error(err); toast('Analysis download failed: '+err.message); }
+    });
+
+    // Register: paste CSV or JSON (uses PapaParse)
+    el('applyRegister').addEventListener('click', async () => {
+      if(!selectedClassId) return toast('Choose class first');
+      const txt = el('registerInput').value.trim(); if(!txt) return toast('Paste CSV or JSON rows');
+      try{
+        const parsedJson = JSON.parse(txt);
+        if(Array.isArray(parsedJson)){
+          let applied=0;
+          for(const r of parsedJson){ if(!r.date || !r.roll || !r.status) continue; const student = studentsCache.find(s=> String(s.roll||'') === String(r.roll) || String(s.studentId||'') === String(r.studentId)); if(!student) continue; await setDoc(doc(db,'attendance', `${r.date}_${student.studentId}`), { studentId: student.studentId, date: r.date, status: r.status, classId: selectedClassId, teacher: r.teacher||null, mode: r.mode||null, attendanceTime: r.attendanceTime || new Date().toISOString(), importedAt: serverTimestamp() }); applied++; }
+          toast(`Register applied (JSON) — ${applied} rows`);
+          await renderAttendanceForSelectedDate();
+          return;
+        }
+      }catch(e){ /* not json */ }
+
+      // CSV via PapaParse
+      const parsed = Papa.parse(txt, { header: false, skipEmptyLines: true });
+      if(parsed.errors && parsed.errors.length) console.warn('Register CSV parse errors', parsed.errors);
+      let applied=0;
+      for(const row of parsed.data){
+        // Expected: date,roll,status  (if header exists and columns vary, user should use JSON or header mode)
+        const cols = row.map(c => (c||'').toString().trim());
+        if(cols.length < 3) continue;
+        const [date, roll, status] = cols;
+        const student = studentsCache.find(s=> String(s.roll||'') === String(roll) || String(s.studentId||'') === String(roll));
+        if(!student) continue;
+        try{ await setDoc(doc(db,'attendance', `${date}_${student.studentId}`), { studentId: student.studentId, date, status, classId: selectedClassId, teacher: null, mode: null, attendanceTime: new Date().toISOString(), importedAt: serverTimestamp() }); applied++; }catch(err){ console.error('register row failed', err); }
+      }
+      toast(`Register applied (CSV) — ${applied} rows`);
+      await renderAttendanceForSelectedDate();
+    });
+
+    el('clearRegister').addEventListener('click', ()=> el('registerInput').value='');
+
+    // Download current single-file HTML
+    el('downloadFile').addEventListener('click', ()=>{ const html = '<!doctype html>\\n' + document.documentElement.outerHTML; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = 'school-attendance-firestore-fixed.html'; document.body.appendChild(a); a.click(); a.remove(); });
+
+    // init
+
+// ---- Full Backup (All Data) ----
+el('backupJson').addEventListener('click', async () => {
+  try {
+    const [cSnap, sSnap, aSnap] = await Promise.all([
+      getDocs(collection(db, 'classes')),
+      getDocs(collection(db, 'students')),
+      getDocs(collection(db, 'attendance'))
+    ]);
+
+    const data = {
+      classes: cSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      students: sSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      attendance: aSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'attendance-backup.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast('Full backup downloaded');
+  } catch (err) {
+    console.error(err);
+    toast('Backup failed: ' + err.message);
+  }
+});
+
+// ---- Restore Backup ----
+el('restoreJson').addEventListener('click', () => el('restoreJsonFile').click());
+
+el('restoreJsonFile').addEventListener('change', async (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if (!data.classes || !data.students || !data.attendance) {
+      toast('Invalid backup file');
+      return;
+    }
+
+    if (!confirm('This will overwrite current data. Continue?')) return;
+
+    const batch = writeBatch(db);
+
+    // clear old data
+    const clearCollections = async (name) => {
+      const snap = await getDocs(collection(db, name));
+      snap.docs.forEach(docSnap => batch.delete(doc(db, name, docSnap.id)));
+    };
+    await clearCollections('classes');
+    await clearCollections('students');
+    await clearCollections('attendance');
+
+    // restore data
+    data.classes.forEach(c => batch.set(doc(db, 'classes', c.id), c));
+    data.students.forEach(s => batch.set(doc(db, 'students', s.id), s));
+    data.attendance.forEach(a => batch.set(doc(db, 'attendance', a.id), a));
+
+    await batch.commit();
+    toast('Backup restored successfully');
+    startClassesListener(); // reload UI
+  } catch (err) {
+    console.error(err);
+    toast('Restore failed: ' + err.message);
+  }
+});
+
+// ---- Erase Only Classes ----
+el('eraseClasses').addEventListener('click', async () => {
+  if (!confirm('⚠️ This will delete ALL classes. Students and attendance will remain. Continue?')) return;
+  try {
+    const snap = await getDocs(collection(db, 'classes'));
+    const batch = writeBatch(db);
+    snap.docs.forEach(docSnap => batch.delete(doc(db, 'classes', docSnap.id)));
+    await batch.commit();
+    toast('All classes erased');
+    startClassesListener(); // refresh UI
+  } catch (err) {
+    console.error(err);
+    toast('Erase failed: ' + err.message);
+  }
+});
+
+// ---- Erase ALL Data ----
+el('eraseAll').addEventListener('click', async () => {
+  if (!confirm('⚠️ WARNING: This will delete ALL classes, students, and attendance! Continue?')) return;
+  try {
+    const batch = writeBatch(db);
+
+    const eraseCollection = async (name) => {
+      const snap = await getDocs(collection(db, name));
+      snap.docs.forEach(docSnap => batch.delete(doc(db, name, docSnap.id)));
+    };
+
+    await eraseCollection('classes');
+    await eraseCollection('students');
+    await eraseCollection('attendance');
+
+    await batch.commit();
+    toast('ALL data erased');
+    startClassesListener(); // refresh UI
+  } catch (err) {
+    console.error(err);
+    toast('Erase all failed: ' + err.message);
+  }
+});
+
+
+// Show custom date pickers only if "Custom" is selected
+el('reportRange').addEventListener('change', e=>{
+  if(e.target.value === 'custom'){
+    el('reportStart').classList.remove('hidden');
+    el('reportEnd').classList.remove('hidden');
+  } else {
+    el('reportStart').classList.add('hidden');
+    el('reportEnd').classList.add('hidden');
+  }
+});
+
+// ---------- Populate student dropdown for per-student reports ----------
+function populateStudentReportSelect() {
+  const sel = el('studentReportSelect');
+  sel.innerHTML = '<option value="">— Select student —</option>';
+  if (!studentsCache || studentsCache.length === 0) return;
+
+  // sort students
+  const sorted = [...studentsCache].sort((a,b)=>{
+    const aR = Number(a.roll), bR = Number(b.roll);
+    if (Number.isFinite(aR) && Number.isFinite(bR) && aR!==bR) return aR-bR;
+    if (Number.isFinite(aR) && !Number.isFinite(bR)) return -1;
+    if (!Number.isFinite(aR) && Number.isFinite(bR)) return 1;
+    return (a.name||'').localeCompare(b.name||'');
+  });
+
+  sorted.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.studentId || s.id;
+    o.textContent = `${s.roll ? s.roll + ' • ' : ''}${s.name} ${s.studentId ? '('+s.studentId+')' : ''}`;
+    sel.appendChild(o);
+  });
+}
+
+// attach after loading students
+// inside loadStudentsForClass(...) call populateStudentReportSelect() at the end
+
+// show/hide custom date inputs
+el('studentReportRange').addEventListener('change', (e)=>{
+  const v = e.target.value;
+  el('studentReportStart').classList.toggle('hidden', v!=='custom');
+  el('studentReportEnd').classList.toggle('hidden', v!=='custom');
+});
+
+// helper for ranges
+function resolveStudentRange(range) {
+  const now = new Date();
+  let start = null, end = fmtDate(now);
+  if (range === 'today') start = fmtDate(now);
+  else if (range === 'week'){ const d = new Date(); d.setDate(now.getDate()-6); start = fmtDate(d); }
+  else if (range === 'month'){ const d = new Date(); d.setDate(now.getDate()-29); start = fmtDate(d); }
+  else if (range === 'custom'){ start = el('studentReportStart').value; end = el('studentReportEnd').value || end; }
+  else if (range === 'all') start = '2000-01-01';
+  return { start, end };
+}
+
+// PREVIEW per-student report
+el('generateStudentReport').addEventListener('click', async ()=>{
+  if (!selectedClassId) return toast('Choose class first');
+  const studentId = el('studentReportSelect').value;
+  if (!studentId) return toast('Pick a student');
+  const range = el('studentReportRange').value || 'all';
+  const { start, end } = resolveStudentRange(range);
+  if (!start || !end) return toast('Pick a valid range');
+
+  try {
+    const q = query(collection(db,'attendance'), where('date','>=', start), where('date','<=', end));
+    const aSnap = await getDocs(q);
+    const rows = aSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+                  .filter(r => r.classId === selectedClassId && r.studentId === studentId);
+
+    const student = studentsCache.find(s => (s.studentId||s.id) === studentId) || {studentId};
+
+    // make table
+    let html = `<h4 class="font-semibold">Report — ${escapeHtml(student.name || studentId)}</h4>`;
+    html += `<div class="text-sm mb-2">Range: ${start} → ${end} (${rows.length} records)</div>`;
+    html += `<table class="w-full text-sm border border-gray-300 rounded">
+  <thead class="bg-slate-100 text-left">
+    <tr>
+      <th class="px-3 py-2 border-b">Date</th>
+      <th class="px-3 py-2 border-b text-center">Status</th>
+      <th class="px-3 py-2 border-b">Teacher</th>
+      <th class="px-3 py-2 border-b text-center">Mode</th>
+    </tr>
+  </thead>
+  <tbody>`;
+
+
+    const summary = { present:0, absent:0, late:0 };
+    const byDate = {}; rows.forEach(r => byDate[r.date] = r);
+
+    // loop through dates in range
+    function getDatesBetween(s,e){ const arr=[]; let cur=new Date(s); const last=new Date(e); while(cur<=last){ arr.push(fmtDate(cur)); cur.setDate(cur.getDate()+1);} return arr; }
+    const dates = getDatesBetween(start,end);
+    dates.forEach(d=>{
+const day = new Date(d).getDay(); // 0=Sunday, 6=Saturday
+if (day === 0 || day === 6) {
+  const dayName = (day === 0 ? "Sunday" : "Saturday");
+  html += `<tr class="border-b bg-slate-50 font-semibold">
+             <td class="px-3 py-2">${d}</td>
+             <td colspan="3" class="px-3 py-2 text-center">${dayName}</td>
+           </tr>`;
+  return; // skip normal attendance rows
+}
+
+      const rec = byDate[d];
+      const status = rec ? (rec.status || 'absent') : 'absent';
+     html += `<tr class="border-b hover:bg-slate-50">
+  <td class="px-3 py-2">${d}</td>
+  <td class="px-3 py-2 text-center">${status}</td>
+  <td class="px-3 py-2">${rec?.teacher || '-'}</td>
+  <td class="px-3 py-2 text-center">${rec?.mode || '-'}</td>
+</tr>`;
+
+      summary[status] = (summary[status]||0)+1;
+    });
+
+    html += `</tbody></table>`;
+    const total = dates.length, present = summary.present||0;
+    const pct = total? ((present/total)*100).toFixed(1)+'%' : '0%';
+    html += `<div class="mt-2 font-semibold">Summary: Total ${total} • Present ${present} • Absent ${summary.absent||0} • Late ${summary.late||0} • Attendance ${pct}</div>`;
+    el('reportArea').innerHTML = html;
+
+  } catch(err){ console.error(err); toast('Error: '+err.message); }
+});
+
+// EXPORT CSV
+el('exportStudentCsv').addEventListener('click', async ()=>{
+  if (!selectedClassId) return toast('Choose class first');
+  const studentId = el('studentReportSelect').value;
+  if (!studentId) return toast('Pick a student');
+
+  const range = el('studentReportRange').value || 'all';
+  const { start, end } = resolveStudentRange(range);
+  if (!start || !end) return toast('Pick a valid range');
+
+  try {
+    const q = query(collection(db,'attendance'),
+      where('date','>=', start),
+      where('date','<=', end)
+    );
+    const aSnap = await getDocs(q);
+    const rows = aSnap.docs.map(d=> ({ id:d.id, ...d.data() }))
+      .filter(r=> r.classId === selectedClassId && r.studentId === studentId);
+
+    const byDate = {};
+    rows.forEach(r=> byDate[r.date] = r);
+
+    function getDatesBetween(s,e){
+      const arr=[]; let cur=new Date(s);
+      const last=new Date(e);
+      while(cur<=last){ arr.push(fmtDate(cur)); cur.setDate(cur.getDate()+1); }
+      return arr;
+    }
+    const dates = getDatesBetween(start,end);
+
+    const student = studentsCache.find(s=> (s.studentId||s.id) === studentId) || {};
+    const header = 'Date,StudentID,StudentName,Status,Teacher,Mode,AttendanceTime\n';
+    const lines = dates.map(d=>{
+      const r = byDate[d];
+      return [
+        d,
+        studentId,
+        student.name || '',
+        r ? r.status : 'absent',
+        r ? (r.teacher||'') : '',
+        r ? (r.mode||'') : '',
+        r ? (r.attendanceTime||'') : ''
+      ].map(escapeCsv).join(',');
+    });
+
+    const blob = new Blob([header + lines.join('\n')], { type:'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `blackhatsheets-student-${studentId}-${start}_to_${end}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    toast('Student CSV exported');
+  } catch(err){
+    console.error(err);
+    toast('CSV export failed: ' + err.message);
+  }
+});
+
+// EXPORT EXCEL
+el('exportStudentExcel').addEventListener('click', async ()=>{
+  if (!selectedClassId) return toast('Choose class first');
+  const studentId = el('studentReportSelect').value;
+  if (!studentId) return toast('Pick a student');
+
+  const range = el('studentReportRange').value || 'all';
+  const { start, end } = resolveStudentRange(range);
+  if (!start || !end) return toast('Pick a valid range');
+
+  try {
+    const q = query(collection(db,'attendance'),
+      where('date','>=', start),
+      where('date','<=', end)
+    );
+    const aSnap = await getDocs(q);
+    const rows = aSnap.docs.map(d=> ({ id:d.id, ...d.data() }))
+      .filter(r=> r.classId === selectedClassId && r.studentId === studentId);
+
+    const byDate = {};
+    rows.forEach(r=> byDate[r.date] = r);
+
+    function getDatesBetween(s,e){
+      const arr=[]; let cur=new Date(s);
+      const last=new Date(e);
+      while(cur<=last){ arr.push(fmtDate(cur)); cur.setDate(cur.getDate()+1); }
+      return arr;
+    }
+    const dates = getDatesBetween(start,end);
+
+    const student = studentsCache.find(s=> (s.studentId||s.id) === studentId) || {};
+
+    // Prepare data for Excel
+    const sheetData = [];
+    sheetData.push([`Student: ${student.name || studentId}`]);
+    sheetData.push([`ID: ${studentId}`, `Roll: ${student.roll||''}`, `Class: ${classesCache.find(c=>c.id===selectedClassId)?.name||''}`]);
+    sheetData.push([]);
+    sheetData.push(['Date','Status','Teacher','Mode','AttendanceTime']);
+
+    dates.forEach(d=>{
+const day = new Date(d).getDay();
+if (day === 0 || day === 6) {
+  const dayName = (day === 0 ? "Sunday" : "Saturday");
+  sheetData.push([d, dayName]); 
+  return;
+}
+
+      const r = byDate[d];
+      sheetData.push([
+        d,
+        r ? r.status : 'absent',
+        r ? (r.teacher||'') : '',
+        r ? (r.mode||'') : '',
+        r ? (r.attendanceTime||'') : ''
+      ]);
+    });
+
+    // Add summary row
+    const present = dates.filter(d => byDate[d]?.status === 'present').length;
+    const late = dates.filter(d => byDate[d]?.status === 'late').length;
+    const absent = dates.length - present - late;
+    const pct = dates.length ? ((present/dates.length)*100).toFixed(1)+'%' : '0%';
+
+    sheetData.push([]);
+    sheetData.push([`Total days: ${dates.length}`, `Present: ${present}`, `Absent: ${absent}`, `Late: ${late}`, `Attendance %: ${pct}`]);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Student Report');
+
+    // Download file
+    const fname = `blackhatsheets-student-${studentId}-${start}_to_${end}.xlsx`;
+    XLSX.writeFile(wb, fname);
+
+    toast('Student Excel exported');
+  } catch(err){
+    console.error(err);
+    toast('Excel export failed: ' + err.message);
+  }
+});
+
+
+
+// ================== Quick School Summary ==================
+function startSchoolSummaryListener() {
+  const today = fmtDate(new Date());
+
+  // --- Total Classes ---
+  onSnapshot(collection(db, 'classes'), snap => {
+    el('sumClasses').textContent = snap.size;
+  });
+
+  // --- Students + Attendance ---
+  onSnapshot(collection(db, 'students'), studentSnap => {
+    const totalStudents = studentSnap.size;
+    el('sumStudents').textContent = totalStudents;
+
+    const studentIds = new Set();
+    studentSnap.forEach(s => studentIds.add(s.id));
+
+    // Attendance for today
+    const q = query(collection(db, 'attendance'), where('date', '==', today));
+    onSnapshot(q, attSnap => {
+      let present = 0, absent = 0, late = 0;
+      const markedIds = new Set();
+
+      attSnap.forEach(doc => {
+        const s = doc.data();
+        markedIds.add(s.studentId);
+
+        if (s.status === 'present') present++;
+        else if (s.status === 'late') late++;
+        else absent++;
+      });
+
+      // Students with no record = absent
+      const unmarked = totalStudents - markedIds.size;
+      absent += unmarked;
+
+      // Update UI
+      el('sumPresentToday').textContent = present;
+      el('sumAbsentToday').textContent = absent;
+      el('sumLateToday').textContent = late;
+
+      // Attendance %
+      const pct = totalStudents > 0 ? ((present / totalStudents) * 100).toFixed(1) : 0;
+      el('sumAttendancePct').textContent = pct + '%';
+    });
+  });
+}
+
+// Call after Firebase init
+startSchoolSummaryListener();
+
+
+// -------- Teachers --------
+const teacherForm = el("teacherForm");
+const teacherList = el("teacherList");
+const addTeacherBtn = el("addTeacherBtn");
+
+teacherForm.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+
+  let tid = el("teacherId").value.trim();
+  if (!tid) {
+    tid = await generateUniqueTeacherId();
+  }
+  if (!isValidTeacherId(tid)) return toast("Invalid ID — only numbers and underscore (_) allowed.");
+  if (await checkDuplicateTeacherId(tid, addTeacherBtn.dataset.editId)) {
+    return toast("Teacher ID already in use");
+  }
+
+  const teacher = {
+    teacherId: tid,
+    name: el("teacherName").value.trim(),
+    subject: el("teacherSubject").value.trim(),
+    phone: el("teacherPhone").value.trim(),
+    email: el("teacherEmail").value.trim(),
+    address: el("teacherAddress").value.trim(),
+    qualification: el("teacherQualification").value.trim(),
+    experience: parseInt(el("teacherExperience").value.trim() || "0"),
+    gender: el("teacherGender").value,
+    birthday: el("teacherBirthday").value || null,
+    updatedAt: serverTimestamp(),
+  };
+
+  if (!teacher.name) return toast("Enter teacher name");
+
+  try {
+    if (addTeacherBtn.dataset.editId) {
+      await setDoc(doc(db, "teachers", addTeacherBtn.dataset.editId), teacher, { merge: true });
+      toast("Teacher updated");
+      delete addTeacherBtn.dataset.editId;
+      addTeacherBtn.textContent = "Add Teacher";
+    } else {
+      teacher.createdAt = serverTimestamp();
+      await addDoc(collection(db, "teachers"), teacher);
+      toast("Teacher added");
+    }
+    teacherForm.reset();
+    loadTeachers();
+  } catch (err) {
+    console.error(err);
+    toast("Save failed: " + err.message);
+  }
+});
+
+el("clearTeacherBtn").addEventListener("click", () => {
+  teacherForm.reset();
+  delete addTeacherBtn.dataset.editId;
+  addTeacherBtn.textContent = "Add Teacher";
+});
+
+// ------- Load & Render Teachers -------
+async function loadTeachers() {
+  const snap = await getDocs(collection(db, "teachers"));
+  teacherList.innerHTML = "";
+  if (snap.empty) {
+    teacherList.innerHTML = "<p class='text-slate-500'>No teachers added yet</p>";
+    return;
+  }
+
+  snap.docs.forEach((d) => {
+    const t = d.data();
+    const id = d.id;
+    const card = document.createElement("div");
+    card.className =
+      "p-4 bg-white rounded-xl shadow flex flex-col gap-2 border hover:shadow-md transition";
+
+    card.innerHTML = `
+      <div class="flex justify-between items-center">
+        <h4 class="font-semibold text-lg">${escapeHtml(t.name)}</h4>
+        <div class="flex gap-2">
+          <button data-id="${id}" class="editTeacherBtn px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded">Edit</button>
+          <button data-id="${id}" class="delTeacherBtn px-2 py-1 text-xs bg-red-100 text-red-600 rounded">Delete</button>
+        </div>
+      </div>
+      <div class="text-sm text-slate-700"><strong>ID:</strong> ${escapeHtml(t.teacherId || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Subject:</strong> ${escapeHtml(t.subject || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Phone:</strong> ${escapeHtml(t.phone || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Email:</strong> ${escapeHtml(t.email || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Address:</strong> ${escapeHtml(t.address || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Qualification:</strong> ${escapeHtml(t.qualification || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Experience:</strong> ${t.experience || 0} years</div>
+      <div class="text-sm text-slate-700"><strong>Gender:</strong> ${escapeHtml(t.gender || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Birthday:</strong> ${escapeHtml(t.birthday || "—")}</div>
+    `;
+    teacherList.appendChild(card);
+
+    card.querySelector(".editTeacherBtn").addEventListener("click", () => startEditTeacher(id, t));
+    card.querySelector(".delTeacherBtn").addEventListener("click", () => deleteTeacher(id));
+  });
+}
+
+function startEditTeacher(id, t) {
+  el("teacherId").value = t.teacherId || "";
+  el("teacherName").value = t.name || "";
+  el("teacherSubject").value = t.subject || "";
+  el("teacherPhone").value = t.phone || "";
+  el("teacherEmail").value = t.email || "";
+  el("teacherAddress").value = t.address || "";
+  el("teacherQualification").value = t.qualification || "";
+  el("teacherExperience").value = t.experience || "";
+  el("teacherGender").value = t.gender || "";
+  el("teacherBirthday").value = t.birthday || "";
+  addTeacherBtn.textContent = "Save Teacher";
+  addTeacherBtn.dataset.editId = id;
+}
+
+async function deleteTeacher(id) {
+  if (!confirm("Delete this teacher?")) return;
+  await deleteDoc(doc(db, "teachers", id));
+  toast("Teacher deleted");
+  loadTeachers();
+}
+
+// Run once
+loadTeachers();
+
+
+(() => {
+  const $ = id => document.getElementById(id);
+
+  const modal = $("marksheetModal");
+  const openBtn = $("openMarksheetBtn");
+  const closeBtn = $("marksheetClose");
+  const cancelBtn = $("ms_cancel");
+  const studentSelect = $("ms_studentSelect");
+  const studentNameEl = $("ms_studentName");
+  const studentRollEl = $("ms_studentRoll");
+  const subjectRows = $("ms_subjectRows");
+  const prevList = $("ms_previousList");
+
+  const totalObt = $("ms_totalObtained");
+  const totalMax = $("ms_totalMax");
+  const gradeEl = $("ms_overallGrade");
+
+  const inputs = {
+    examName: $("ms_examName"),
+    academicYear: $("ms_academicYear"),
+    term: $("ms_term"),
+    date: $("ms_date"),
+    duration: $("ms_duration"),
+    passMarks: $("ms_passMarks"),
+    classTeacher: $("ms_classTeacher"),
+    examCoordinator: $("ms_examCoordinator"),
+    remarks: $("ms_remarks"),
+  };
+
+  let _rowCounter = 0;
+
+  function openModal() { modal.classList.remove("hidden"); }
+  function closeModal() { modal.classList.add("hidden"); }
+
+  openBtn.addEventListener("click", () => {
+    if (!selectedClassId) return toast("Choose a class first");
+    populateStudents();
+    clearForm();
+    openModal();
+  });
+  closeBtn.addEventListener("click", closeModal);
+  cancelBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+
+  // ========== Subject Rows ==========
+  function addSubjectRow(data = {}) {
+    _rowCounter++;
+    const row = document.createElement("div");
+    row.className = "grid grid-cols-12 gap-2 p-2 border rounded items-center";
+    row.innerHTML = `
+      <input name="subName" placeholder="Subject" value="${data.name||""}" class="col-span-5 border rounded px-2 py-1 text-sm" />
+      <input name="marks" type="number" value="${data.marks||""}" placeholder="Marks" class="col-span-3 border rounded px-2 py-1 text-sm" />
+      <input name="max" type="number" value="${data.maxMarks||100}" placeholder="Max" class="col-span-3 border rounded px-2 py-1 text-sm" />
+      <button type="button" class="remove col-span-1 text-red-600">✕</button>
+    `;
+    row.querySelector(".remove").addEventListener("click", () => { row.remove(); calcTotals(); });
+    row.querySelectorAll("input").forEach(inp => inp.addEventListener("input", calcTotals));
+    subjectRows.appendChild(row);
+    calcTotals();
+  }
+
+  $("ms_addSubject").addEventListener("click", () => addSubjectRow());
+  $("ms_clearSubjects").addEventListener("click", () => { subjectRows.innerHTML = ""; calcTotals(); });
+
+  function calcTotals() {
+    let obt = 0, max = 0;
+    subjectRows.querySelectorAll("div").forEach(r => {
+      const m = Number(r.querySelector("[name=marks]").value) || 0;
+      const M = Number(r.querySelector("[name=max]").value) || 0;
+      obt += m; max += M;
+    });
+    totalObt.textContent = obt;
+    totalMax.textContent = max;
+    const pct = max ? (obt/max)*100 : 0;
+    gradeEl.textContent = gradeFromPct(pct);
+  }
+
+  function gradeFromPct(p) {
+    if (p >= 90) return "A+";
+    if (p >= 80) return "A";
+    if (p >= 70) return "B+";
+    if (p >= 60) return "B";
+    if (p >= 50) return "C";
+    if (p >= 40) return "S";
+    return "F";
+  }
+
+  // ========== Students ==========
+  function populateStudents() {
+    studentSelect.innerHTML = '<option value="">— Select student —</option>';
+    (studentsCache || []).forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.studentId;
+      opt.textContent = `${s.roll||""} ${s.name}`;
+      studentSelect.appendChild(opt);
+    });
+  }
+
+  studentSelect.addEventListener("change", async () => {
+    const sid = studentSelect.value;
+    if (!sid) return;
+
+    const s = studentsCache.find(x => x.studentId === sid);
+    studentNameEl.value = s?.name || "";
+    studentRollEl.value = s?.roll || "";
+
+    // Load previous marksheets
+    prevList.innerHTML = "Loading…";
+    const q = query(collection(db,"marksheets"), where("studentId","==",sid), where("classId","==",selectedClassId));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      prevList.innerHTML = "<em>No previous marksheets</em>";
+    } else {
+      prevList.innerHTML = "";
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "p-2 border rounded hover:bg-gray-50 cursor-pointer";
+        div.textContent = `${d.examName||"Exam"} — ${d.term||""} (${d.date||""})`;
+        div.addEventListener("click", () => fillForm(d));
+        prevList.appendChild(div);
+      });
+    }
+  });
+
+  // ========== Fill & Clear ==========
+  function fillForm(d) {
+    inputs.examName.value = d.examName||"";
+    inputs.academicYear.value = d.academicYear||"";
+    inputs.term.value = d.term||"";
+    inputs.date.value = d.date||"";
+    inputs.duration.value = d.duration||"";
+    inputs.passMarks.value = d.passMarks||"";
+    inputs.classTeacher.value = d.classTeacher||"";
+    inputs.examCoordinator.value = d.examCoordinator||"";
+    inputs.remarks.value = d.remarks||"";
+    subjectRows.innerHTML = "";
+    (d.subjects||[]).forEach(s => addSubjectRow(s));
+    calcTotals();
+  }
+
+  function clearForm() {
+    Object.values(inputs).forEach(i => i.value="");
+    studentNameEl.value=""; studentRollEl.value="";
+    subjectRows.innerHTML="";
+    addSubjectRow();
+    calcTotals();
+    prevList.innerHTML="";
+  }
+
+  // ========== Save ==========
+  $("marksheetForm").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const sid = studentSelect.value;
+    if (!sid) return toast("Select a student");
+    if (!inputs.examName.value.trim()) return toast("Enter exam name");
+
+    const subjects = [];
+    subjectRows.querySelectorAll("div").forEach(r => {
+      subjects.push({
+        name: r.querySelector("[name=subName]").value.trim(),
+        marks: Number(r.querySelector("[name=marks]").value)||0,
+        maxMarks: Number(r.querySelector("[name=max]").value)||0,
+      });
+    });
+
+    let obt = 0, max = 0;
+    subjects.forEach(s => { obt+=s.marks; max+=s.maxMarks; });
+    const pct = max ? (obt/max)*100 : 0;
+
+    const payload = {
+      classId: selectedClassId,
+      studentId: sid,
+      studentName: studentNameEl.value,
+      studentRoll: studentRollEl.value,
+      examName: inputs.examName.value.trim(),
+      academicYear: inputs.academicYear.value.trim(),
+      term: inputs.term.value,
+      date: inputs.date.value,
+      duration: inputs.duration.value,
+      passMarks: Number(inputs.passMarks.value||0),
+      classTeacher: inputs.classTeacher.value.trim(),
+      examCoordinator: inputs.examCoordinator.value.trim(),
+      remarks: inputs.remarks.value.trim(),
+      subjects,
+      totals: {obtained: obt, max, percentage: pct, grade: gradeFromPct(pct)},
+      createdAt: serverTimestamp()
+    };
+
+    await addDoc(collection(db,"marksheets"), payload);
+    toast("Marksheet saved ✅");
+    closeModal();
+  });
+})();
+
+
+// ===== Student Details Modal =====
+const modal = el("studentDetailsModal");
+const openBtn = el("openStudentDetailsBtn");
+const closeBtn = el("closeStudentDetailsBtn");
+const cancelBtn = el("cancelDetailsBtn");
+const studentSelect = el("detailsStudentSelect");
+const form = el("studentDetailsForm");
+
+// open modal
+openBtn.addEventListener("click", () => {
+  if (!selectedClassId) return toast("Select a class first");
+  studentSelect.innerHTML = '<option value="">— Select a student —</option>';
+  studentsCache.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = `${s.roll || ""} — ${s.name}`;
+    studentSelect.appendChild(opt);
+  });
+  clearForm();
+  modal.classList.remove("hidden");
+});
+
+// close modal
+function closeModal() {
+  modal.classList.add("hidden");
+  clearForm();
+  studentSelect.value = "";
+}
+closeBtn.addEventListener("click", closeModal);
+cancelBtn.addEventListener("click", closeModal);
+
+// clear form
+function clearForm() {
+  form.querySelectorAll("textarea").forEach(f => f.value = "");
+}
+
+// load data
+studentSelect.addEventListener("change", () => {
+  clearForm();
+  const s = studentsCache.find(x => x.id === studentSelect.value);
+  if (!s) return;
+  el("fAwards").value = (s.awards || []).join(", ");
+  el("fRoles").value = (s.roles || []).join(", ");
+  el("fSports").value = (s.sports || []).join(", ");
+  el("fClubs").value = (s.clubs || []).join(", ");
+  el("fCompetitions").value = (s.competitions || []).join(", ");
+  el("fScholarships").value = (s.scholarships || []).join(", ");
+  el("fVolunteer").value = (s.volunteer || []).join(", ");
+  el("fLeadership").value = (s.leadership || []).join(", ");
+  el("fCertificates").value = (s.certificates || []).join(", ");
+  el("fProjects").value = (s.projects || []).join(", ");
+  el("fExams").value = (s.exams || []).join(", ");
+  el("fAchievements").value = (s.achievements || []).join(", ");
+  el("fLanguages").value = (s.languages || []).join(", ");
+  el("fSkills").value = (s.skills || []).join(", ");
+  el("fHealth").value = s.health || "";
+  el("fUndisciplinary").value = (s.undisciplinary || []).join(", ");
+  el("fNotes").value = s.notes || "";
+});
+
+// save
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const id = studentSelect.value;
+  if (!id) return toast("Select a student first");
+  const sOld = studentsCache.find(x => x.id === id);
+  const data = {
+    ...sOld,
+    awards: el("fAwards").value.split(",").map(x=>x.trim()).filter(Boolean),
+    roles: el("fRoles").value.split(",").map(x=>x.trim()).filter(Boolean),
+    sports: el("fSports").value.split(",").map(x=>x.trim()).filter(Boolean),
+    clubs: el("fClubs").value.split(",").map(x=>x.trim()).filter(Boolean),
+    competitions: el("fCompetitions").value.split(",").map(x=>x.trim()).filter(Boolean),
+    scholarships: el("fScholarships").value.split(",").map(x=>x.trim()).filter(Boolean),
+    volunteer: el("fVolunteer").value.split(",").map(x=>x.trim()).filter(Boolean),
+    leadership: el("fLeadership").value.split(",").map(x=>x.trim()).filter(Boolean),
+    certificates: el("fCertificates").value.split(",").map(x=>x.trim()).filter(Boolean),
+    projects: el("fProjects").value.split(",").map(x=>x.trim()).filter(Boolean),
+    exams: el("fExams").value.split(",").map(x=>x.trim()).filter(Boolean),
+    achievements: el("fAchievements").value.split(",").map(x=>x.trim()).filter(Boolean),
+    languages: el("fLanguages").value.split(",").map(x=>x.trim()).filter(Boolean),
+    skills: el("fSkills").value.split(",").map(x=>x.trim()).filter(Boolean),
+    health: el("fHealth").value.trim(),
+    undisciplinary: el("fUndisciplinary").value.split(",").map(x=>x.trim()).filter(Boolean),
+    notes: el("fNotes").value.trim()
+  };
+
+  try {
+    await setDoc(doc(db, "students", id), data);
+    toast("Details saved");
+    closeModal();
+    await loadStudentsForClass(selectedClassId);
+  } catch (err) {
+    console.error(err);
+    toast("Save failed: " + err.message);
+  }
+});
+
+// tabs
+document.querySelectorAll(".tabBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll(".tabContent").forEach(c => {
+      c.classList.toggle("hidden", c.dataset.tab !== tab);
+    });
+    document.querySelectorAll(".tabBtn").forEach(b => {
+      b.classList.toggle("border-orange-500", b.dataset.tab === tab);
+      b.classList.toggle("text-orange-600", b.dataset.tab === tab);
+    });
+  });
+});
+document.querySelector(".tabBtn[data-tab='general']").click();
+
+// auto-expand textareas
+document.querySelectorAll(".autoExpand").forEach(t => {
+  t.addEventListener("input", () => {
+    t.style.height = "auto";
+    t.style.height = (t.scrollHeight) + "px";
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// === Close modal when clicking outside ===
+document.getElementById('studentSummaryModal').addEventListener('click', (e) => {
+  if (e.target.id === 'studentSummaryModal') {
+    closeStudentSummary();
+  }
+});
+
+function closeStudentSummary() {
+  document.getElementById('studentSummaryModal').classList.add('hidden');
+}
+
+// === View Summary Button Action ===
+document.addEventListener('click', async (e) => {
+  if (!e.target.classList.contains('viewSummaryBtn')) return;
+
+  const id = e.target.dataset.id;
+  const student = studentsCache.find(s => s.id === id);
+  if (!student) return;
+
+  // === Fetch marksheets ===
+  const qMarks = query(collection(db, 'marksheets'), where('studentId', '==', student.studentId));
+  const snapMarks = await getDocs(qMarks);
+  const marksheets = snapMarks.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // === Attendance percentage ===
+  const qAtt = query(collection(db, 'attendance'), where('studentId', '==', student.studentId));
+  const snapAtt = await getDocs(qAtt);
+  const total = snapAtt.size;
+  const present = snapAtt.docs.filter(d => (d.data().status || '') === 'present').length;
+  const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : "0.0";
+
+  // === Profile + Cover info ===
+  document.getElementById("studentPhoto").src = escapeHtml(student.photo || 'https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp');
+  document.getElementById("studentSummaryTitle").textContent = student.name || "Student Profile";
+  document.getElementById("studentSummarySubtitle").textContent = 
+    `Roll: ${student.roll || '—'} • ID: ${student.studentId || '—'}`;
+
+  // === Student Info grid ===
+  let html = `
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+      <p><b>Gender:</b> ${escapeHtml(student.gender || '—')}</p>
+      <p><b>Birthday:</b> ${escapeHtml(student.birthday || '—')}</p>
+      <p><b>Address:</b> ${escapeHtml(student.address || '—')}</p>
+      <p><b>Mother’s Mobile:</b> ${escapeHtml(student.motherMobile || '—')}</p>
+      <p><b>Father’s Mobile:</b> ${escapeHtml(student.fatherMobile || '—')}</p>
+      <p><b>Attendance %:</b> <span class="font-semibold text-blue-600">${percentage}%</span></p>
+    </div>
+  `;
+
+  // === Extended Fields (Firestore IDs) ===
+  const extendedFields = {
+    Achievements: student.achievements,
+    Awards: student.awards,
+    Roles: student.roles,
+    Sports: student.sports,
+    Clubs: student.clubs,
+    Competitions: student.competitions,
+    Scholarships: student.scholarships,
+    "Volunteer Work": student.volunteer,
+    Leadership: student.leadership,
+    Certificates: student.certificates,
+    Projects: student.projects,
+    Exams: student.exams,
+    Languages: student.languages,
+    Skills: student.skills,
+    "Health Info": student.health,
+    "Undisciplinary Works": student.undisciplinary,
+    "General Notes": student.notes
+  };
+
+  let extraHTML = "";
+  Object.entries(extendedFields).forEach(([key, val]) => {
+    if (val) {
+      extraHTML += `
+        <div class="border rounded-xl p-4 bg-slate-50 shadow-sm hover:shadow-md transition">
+          <h3 class="font-semibold text-slate-900 mb-2">${key}</h3>
+          <p class="whitespace-pre-line">${escapeHtml(val)}</p>
+        </div>
+      `;
+    }
+  });
+
+  if (extraHTML) {
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-slate-900 mt-6 mb-3">Additional Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${extraHTML}</div>
+      </div>
+    `;
+  }
+
+  // === Marksheets Section (Dropdown + Table) ===
+  if (marksheets.length) {
+    const options = marksheets.map(m => 
+      `<option value="${m.id}">${escapeHtml(m.examName || 'Exam')} ${m.term ? `(${escapeHtml(m.term)})` : ''}</option>`
+    ).join("");
+
+    html += `
+      <div class="mt-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-3">
+          <h3 class="text-lg font-bold text-slate-900">📑 Marksheets</h3>
+          <select id="marksheetSelect" class="border rounded px-3 py-1 text-sm">
+            ${options}
+          </select>
+        </div>
+        <div id="marksheetContent"></div>
+      </div>
+    `;
+
+    setTimeout(() => {
+      renderMarksheet(marksheets[0]);
+      const sel = document.getElementById("marksheetSelect");
+      sel.addEventListener("change", () => {
+        const chosen = marksheets.find(m => m.id === sel.value);
+        renderMarksheet(chosen);
+      });
+    }, 0);
+  }
+
+  document.getElementById('studentSummaryContent').innerHTML = html;
+  document.getElementById('studentSummaryModal').classList.remove('hidden');
+});
+
+// === Render marksheet ===
+function renderMarksheet(m) {
+  if (!m) return;
+  const subjects = Object.entries(m.subjects || {});
+
+  let html = `
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm border-collapse rounded-lg overflow-hidden shadow">
+        <thead class="bg-slate-200 text-slate-900">
+          <tr>
+            <th class="border px-3 py-2 text-left">Subject</th>
+            <th class="border px-3 py-2 text-center">Marks</th>
+            <th class="border px-3 py-2 text-center">Grade</th>
+            <th class="border px-3 py-2 text-center">Max</th>
+            <th class="border px-3 py-2 text-center">Percentage</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white">
+  `;
+
+  if (subjects.length) {
+    subjects.forEach(([sub, val]) => {
+      html += `
+        <tr class="hover:bg-slate-50">
+          <td class="border px-3 py-2">${escapeHtml(sub)}</td>
+          <td class="border px-3 py-2 text-center">${val.marks ?? '—'}</td>
+          <td class="border px-3 py-2 text-center">${val.grade ?? '—'}</td>
+          <td class="border px-3 py-2 text-center">${val.max ?? '—'}</td>
+          <td class="border px-3 py-2 text-center">${val.percentage ?? '—'}%</td>
+        </tr>`;
+    });
+  } else {
+    html += `<tr><td colspan="5" class="text-center text-slate-500 py-3">No subjects</td></tr>`;
+  }
+
+  if (m.totals) {
+    html += `
+      <tr class="bg-slate-100 font-semibold">
+        <td class="border px-3 py-2 text-right">Total</td>
+        <td class="border px-3 py-2 text-center">${m.totals.marks ?? '—'}</td>
+        <td class="border px-3 py-2 text-center">${m.totals.grade ?? '—'}</td>
+        <td class="border px-3 py-2 text-center">${m.totals.max ?? '—'}</td>
+        <td class="border px-3 py-2 text-center">${m.totals.percentage ?? '—'}%</td>
+      </tr>`;
+  }
+
+  html += `</tbody></table></div>`;
+  document.getElementById("marksheetContent").innerHTML = html;
+}
+
+
+
+    (function init(){ el('attendanceDate').value = fmtDate(new Date()); startClassesListener(); })();
+
+  </script>
+
+
+<script>
+  document.addEventListener('keydown', (e) => {
+    // Define allowed Ctrl-based shortcuts
+    const allowedCtrl = ["c", "v", "x", "z", "a"]; // copy, paste, cut, undo, select all
+
+    // If Ctrl is pressed
+    if (e.ctrlKey && !e.altKey && !e.metaKey) {
+      const key = e.key.toLowerCase();
+
+      // If key is not in allowed list → block it
+      if (!allowedCtrl.includes(key)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        console.log("Blocked Ctrl+" + key);
+        return false;
+      }
+    }
+
+    // Block pressing only Ctrl or Alt by themselves
+    if (e.key === "Control" || e.key === "Alt") {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return false;
+    }
+  }, { capture: true });
+</script>
+
+
+<style>
+  /* Change text selection highlight to orange */
+  ::selection {
+    background: orange;
+    color: white; /* optional for better contrast */
+  }
+  ::-moz-selection { /* for Firefox */
+    background: orange;
+    color: white;
+  }
+</style>
+
+<script>
+  // Disable right-click context menu
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    return false;
+  });
+</script>
+
+<script>
+  window.addEventListener("load", () => {
+    const splash = document.getElementById("splashScreen");
+    setTimeout(() => {
+      splash.style.opacity = "0";
+      setTimeout(() => splash.style.display = "none", 600); // match transition
+    }, 1000); // show for 1s
+  });
+</script>
+
+<style>
+  /* Neon gradient text effect */
+  .animate-gradient {
+    background: linear-gradient(90deg, #ff00ff, #00ffff, #ffea00, #ff00ff);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: neonShift 6s ease infinite;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  @keyframes neonShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Keep link normal (not neon) */
+  .plain-link {
+    color: #e5e7eb; /* soft gray */
+    text-decoration: underline;
+    -webkit-text-fill-color: unset;
+    background: none;
+  }
+</style>
+
+
+<script>
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+
+    document.getElementById("liveClock").innerHTML =
+      `${h}<span class="blink">:</span>${m}<span class="blink">:</span>${s} | ${dd}-${mm}-${yyyy}`;
+  }
+
+  setInterval(updateClock, 1000);
+  updateClock(); // run once on page load
+</script>
+
+<style>
+@keyframes gradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gradient {
+  animation: gradient 6s ease infinite;
+}
+</style>
+
+
+
+<!-- Class Password Modal -->
+<div id="classPasswordModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4">
+  <div class="relative w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+    <!-- Background image -->
+    <div class="absolute inset-0">
+      <img src="https://i.postimg.cc/m2MvsLsW/bgi.jpg" alt="Popup background"
+           class="w-full h-full object-cover" />
+      <div class="absolute inset-0 bg-black bg-opacity-50"></div> <!-- dark overlay -->
+    </div>
+
+    <!-- Content -->
+    <div class="relative p-6 text-white">
+      <!-- Close button -->
+      <button id="cancelClassPassword"
+              class="absolute top-3 right-3 text-gray-200 hover:text-white">
+        ✖
+      </button>
+
+      <!-- Title -->
+      <h2 class="text-xl font-bold mb-4 text-center">🔐 Class Locked</h2>
+      <p class="text-sm opacity-80 text-center mb-4">
+        Please enter the class password to continue
+      </p>
+
+      <!-- Password field -->
+      <div class="relative">
+        <input id="classPasswordInput" type="password"
+               placeholder="Enter password"
+               class="w-full rounded-lg px-4 py-3 pr-10 text-gray-900 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none" />
+        <i class="fa fa-lock absolute right-3 top-3.5 text-gray-500"></i>
+      </div>
+
+      <!-- Error message -->
+      <p id="classPasswordError" class="text-red-400 text-sm mt-2 hidden text-center">
+        ❌ Wrong password. Try again.
+      </p>
+
+      <!-- Buttons -->
+      <div class="flex gap-3 mt-6">
+        <button id="submitClassPassword"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-semibold transition">
+          Unlock
+        </button>
+        <button id="cancelClassPasswordBottom"
+                class="flex-1 border border-gray-300 text-white py-2.5 rounded-lg font-medium bg-white/10 hover:bg-white/20 transition">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in { animation: fade-in 0.25s ease-out; }
+</style>
+
+
+
+
+
+
+
+
+
+<!-- ===== Marksheet Modal (mobile-first, centered & scrollable) ===== -->
+<div id="marksheetModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/50">
+  <div class="w-full max-w-3xl bg-white rounded-2xl shadow-xl flex flex-col max-h-[95vh]">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center px-4 py-3 bg-indigo-600 text-white rounded-t-2xl">
+      <h2 class="text-lg font-semibold">🧾 Student Marksheet</h2>
+      <button id="marksheetClose" class="text-2xl leading-none">&times;</button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto p-4">
+      <form id="marksheetForm" class="space-y-4">
+
+        <!-- Exam Info -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input id="ms_examName" required placeholder="Exam name (e.g., Term Test - Term 1)" class="border rounded px-3 py-2 text-sm" />
+          <input id="ms_academicYear" placeholder="Academic year (e.g., 2025/2026)" class="border rounded px-3 py-2 text-sm" />
+          <select id="ms_term" class="border rounded px-3 py-2 text-sm">
+            <option value="">Select Term</option>
+            <option>Term 1</option>
+            <option>Term 2</option>
+            <option>Term 3</option>
+          </select>
+          <input id="ms_date" type="date" class="border rounded px-3 py-2 text-sm" />
+          <input id="ms_duration" placeholder="Duration (e.g., 1h 30m)" class="border rounded px-3 py-2 text-sm" />
+          <input id="ms_passMarks" type="number" min="0" placeholder="Pass marks per subject" class="border rounded px-3 py-2 text-sm" />
+        </div>
+
+        <!-- Student -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <select id="ms_studentSelect" class="border rounded px-3 py-2 text-sm">
+            <option value="">— Select student —</option>
+          </select>
+          <input id="ms_studentName" readonly placeholder="Full name" class="border bg-gray-50 rounded px-3 py-2 text-sm" />
+          <input id="ms_studentRoll" readonly placeholder="Roll No" class="border bg-gray-50 rounded px-3 py-2 text-sm" />
+        </div>
+
+        <!-- Subjects -->
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-sm font-semibold">Subjects</h3>
+            <div class="flex gap-2">
+              <button id="ms_addSubject" type="button" class="px-3 py-1 bg-green-600 text-white rounded text-sm">+ Add</button>
+              <button id="ms_clearSubjects" type="button" class="px-2 py-1 bg-gray-200 rounded text-sm">Clear</button>
+            </div>
+          </div>
+          <div id="ms_subjectRows" class="space-y-2"></div>
+        </div>
+
+        <!-- Totals -->
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="p-2 bg-gray-100 rounded">
+            <div class="text-xs">Obtained</div>
+            <div id="ms_totalObtained" class="text-lg font-semibold">0</div>
+          </div>
+          <div class="p-2 bg-gray-100 rounded">
+            <div class="text-xs">Max</div>
+            <div id="ms_totalMax" class="text-lg font-semibold">0</div>
+          </div>
+          <div class="p-2 bg-gray-100 rounded">
+            <div class="text-xs">Grade</div>
+            <div id="ms_overallGrade" class="text-lg font-semibold text-indigo-600">-</div>
+          </div>
+        </div>
+
+        <!-- Analysis / Teachers -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input id="ms_classTeacher" placeholder="Class Teacher" class="border rounded px-3 py-2 text-sm" />
+          <input id="ms_examCoordinator" placeholder="Exam Coordinator" class="border rounded px-3 py-2 text-sm" />
+        </div>
+
+        <!-- Remarks -->
+        <textarea id="ms_remarks" rows="2" placeholder="Remarks / Analysis" class="w-full border rounded px-3 py-2 text-sm"></textarea>
+
+        <!-- Previous Marksheets -->
+        <div>
+          <h4 class="text-sm font-semibold mb-1">Previous Marksheets</h4>
+          <div id="ms_previousList" class="text-sm text-gray-600 space-y-1"></div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-end gap-3">
+          <button type="button" id="ms_cancel" class="px-4 py-2 bg-gray-200 rounded">Close</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Save</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Student Details Modal -->
+<div id="studentDetailsModal"
+     class="fixed inset-0 flex items-center justify-center hidden z-50">
+  <!-- Background blur -->
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
+
+  <!-- Modal box -->
+  <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto mx-2 sm:mx-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-2xl font-bold text-orange-600">Student Details Manager</h2>
+      <button id="closeStudentDetailsBtn"
+        class="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
+    </div>
+
+    <!-- Student dropdown -->
+    <div class="mb-6">
+      <label class="block text-sm font-semibold mb-1">Select Student</label>
+      <select id="detailsStudentSelect"
+              class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500">
+        <option value="">— Select a student —</option>
+      </select>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-2 border-b mb-4 text-sm font-medium">
+      <button class="tabBtn py-2 px-3 border-b-2 border-transparent hover:border-orange-400" data-tab="general">General</button>
+      <button class="tabBtn py-2 px-3 border-b-2 border-transparent hover:border-orange-400" data-tab="activities">Activities</button>
+      <button class="tabBtn py-2 px-3 border-b-2 border-transparent hover:border-orange-400" data-tab="extra">Extra</button>
+      <button class="tabBtn py-2 px-3 border-b-2 border-transparent hover:border-orange-400" data-tab="conduct">Conduct</button>
+      <button class="tabBtn py-2 px-3 border-b-2 border-transparent hover:border-orange-400" data-tab="notes">Notes</button>
+    </div>
+
+    <!-- Form -->
+    <form id="studentDetailsForm" class="space-y-6">
+
+      <!-- GENERAL -->
+      <div class="tabContent" data-tab="general">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="block text-sm">Awards</label>
+            <textarea id="fAwards" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Roles</label>
+            <textarea id="fRoles" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Sports</label>
+            <textarea id="fSports" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Clubs</label>
+            <textarea id="fClubs" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+        </div>
+      </div>
+
+      <!-- ACTIVITIES -->
+      <div class="tabContent hidden" data-tab="activities">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="block text-sm">Competitions</label>
+            <textarea id="fCompetitions" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Scholarships</label>
+            <textarea id="fScholarships" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Volunteer Work</label>
+            <textarea id="fVolunteer" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Leadership</label>
+            <textarea id="fLeadership" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+        </div>
+      </div>
+
+      <!-- EXTRA -->
+      <div class="tabContent hidden" data-tab="extra">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="block text-sm">Certificates</label>
+            <textarea id="fCertificates" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Projects</label>
+            <textarea id="fProjects" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Exams</label>
+            <textarea id="fExams" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Achievements</label>
+            <textarea id="fAchievements" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Languages</label>
+            <textarea id="fLanguages" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Special Skills</label>
+            <textarea id="fSkills" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div class="sm:col-span-2"><label class="block text-sm">Health Info</label>
+            <textarea id="fHealth" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+        </div>
+      </div>
+
+      <!-- CONDUCT -->
+      <div class="tabContent hidden" data-tab="conduct">
+        <label class="block text-sm">Undisciplinary Works</label>
+        <textarea id="fUndisciplinary" rows="4" 
+          class="autoExpand w-full border rounded px-3 py-2"></textarea>
+      </div>
+
+      <!-- NOTES -->
+      <div class="tabContent hidden" data-tab="notes">
+        <label class="block text-sm">General Notes</label>
+        <textarea id="fNotes" rows="4" 
+          class="autoExpand w-full border rounded px-3 py-2"></textarea>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex justify-end gap-2">
+        <button type="button" id="cancelDetailsBtn"
+          class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+          Cancel
+        </button>
+        <button type="submit"
+          class="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+          Save Details
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Student Summary Modal -->
+<div id="studentSummaryModal" 
+     class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+  <div id="studentSummaryBox"
+       class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-y-auto max-h-[90vh] relative">
+    
+    <!-- Cover + Profile -->
+    <div class="relative">
+      <img src="https://i.ibb.co/fdqYNyjP/cover.png" 
+           class="w-full h-40 md:h-56 object-cover rounded-t-2xl"/>
+      <div class="absolute -bottom-14 left-6 flex items-center gap-4">
+        <img id="studentPhoto" 
+             src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" 
+             class="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg object-cover"/>
+        <div class="flex flex-col">
+          <h2 id="studentSummaryTitle" class="text-2xl md:text-3xl font-bold text-black">
+            Student Name
+          </h2>
+          <p id="studentSummarySubtitle" class="text-slate-600 text-sm md:text-base">
+            Roll No • Student ID
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pt-20 px-6 pb-6">
+      <!-- Close button -->
+      <div class="flex justify-end mb-4">
+        <button onclick="closeStudentSummary()" 
+                class="text-slate-500 hover:text-red-500 text-xl">✖</button>
+      </div>
+
+      <!-- Content -->
+      <div id="studentSummaryContent" class="space-y-8 text-sm text-slate-700"></div>
+    </div>
+  </div>
+</div>
+
+
+
+</body>
+</html>

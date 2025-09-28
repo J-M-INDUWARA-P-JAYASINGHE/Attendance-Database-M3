@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Maintenance — Clidder Corporation</title>
+  <meta name="description" content="Clidder Corporation is currently undergoing maintenance. We'll be back shortly." />
+  <link rel="icon" type="image/x-icon" href="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: url('https://i.postimg.cc/m2MvsLsW/bgi.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(229, 231, 235, 0.6);
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .spin {
+      animation: spin 4s linear infinite;
+    }
+    .pureorange {
+      color: #ff7a00;
+    }
+    .bg-pureorange {
+      background-color: #ff7a00;
+    }
+    .hover\:bg-pureorange-dark:hover {
+      background-color: #e96e00;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6 font-sans">
+  <main class="w-full max-w-2xl mx-auto">
+    <div class="card rounded-2xl shadow-xl p-10 sm:p-12 text-center">
+      <div class="flex flex-col items-center">
+        <div class="w-24 h-24 flex items-center justify-center rounded-full bg-orange-50 mb-6">
+          <svg class="w-14 h-14 pureorange spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2" />
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none" />
+          </svg>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800">Scheduled Maintenance</h1>
+        <p class="mt-4 text-gray-600 max-w-xl">Clidder Corporation is currently performing scheduled maintenance. Our systems will be back online once the work is completed.</p>
+        <div class="mt-6 text-gray-600 text-sm">
+          <p><strong>Status:</strong> Maintenance in progress</p>
+          <p class="mt-1">Estimated downtime: <span id="eta" class="font-medium">20 – 30 hours</span></p>
+        </div>
+        <button id="retryBtn" class="mt-6 inline-flex items-center px-5 py-2 rounded-lg bg-pureorange text-white font-medium shadow hover:bg-pureorange-dark focus:outline-none focus:ring-2 focus:ring-orange-400">
+          Refresh Page
+        </button>
+        <a href="mailto:jmp.induwarapjayasinghe@gmail.com" class="mt-3 text-sm pureorange hover:underline">Need help? Contact support</a>
+      </div>
+    </div>
+    <footer class="mt-6 text-center text-xs text-gray-100 drop-shadow">
+      © <span id="year"></span> Clidder Corporation | An Induwara Jayasinghe Holdings Company Limited — All rights reserved
+    </footer>
+  </main>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    document.getElementById('retryBtn').addEventListener('click', function(){
+      const btn = this;
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg> Refreshing...';
+      setTimeout(function(){ location.reload(true); }, 1000);
+    });
+  </script>
+</body>
+</html>

@@ -1,76 +1,119 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Maintenance — Clidder Corporation</title>
-  <meta name="description" content="Clidder Corporation is currently undergoing maintenance. We'll be back shortly." />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clidder Platform</title>
   <link rel="icon" type="image/x-icon" href="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" />
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- Google Font (Lobster for CocaCola-style) -->
+  <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+
   <style>
     body {
       background: url('https://i.postimg.cc/m2MvsLsW/bgi.jpg') no-repeat center center fixed;
       background-size: cover;
+      font-family: 'Lobster', cursive; /* Apply CocaCola-style everywhere */
+      color: #222;
     }
-    .card {
-      background: rgba(255, 255, 255, 0.95);
+
+    /* Glass effect card */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      border-radius: 1.5rem;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .glass-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    }
+
+    /* Buttons keep Poppins, not Lobster */
+    .btn {
+      font-family: 'Poppins', sans-serif;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+    .btn:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.25);
+    }
+
+    /* Footer Glass Blur */
+    footer {
+      background: rgba(255, 255, 255, 0.2);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(229, 231, 235, 0.6);
+      border-top: 1px solid rgba(255, 255, 255, 0.3);
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+
+    /* Pure Orange Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
     }
-    .spin {
-      animation: spin 4s linear infinite;
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
     }
-    .pureorange {
-      color: #ff7a00;
+    ::-webkit-scrollbar-thumb {
+      background: orange;
+      border-radius: 8px;
     }
-    .bg-pureorange {
-      background-color: #ff7a00;
-    }
-    .hover\:bg-pureorange-dark:hover {
-      background-color: #e96e00;
+    ::-webkit-scrollbar-thumb:hover {
+      background: darkorange;
     }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6 font-sans">
-  <main class="w-full max-w-2xl mx-auto">
-    <div class="card rounded-2xl shadow-xl p-10 sm:p-12 text-center">
-      <div class="flex flex-col items-center">
-        <div class="w-24 h-24 flex items-center justify-center rounded-full bg-orange-50 mb-6">
-          <svg class="w-14 h-14 pureorange spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2" />
-            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none" />
-          </svg>
-        </div>
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800">Scheduled Maintenance</h1>
-        <p class="mt-4 text-gray-600 max-w-xl">Clidder Corporation is currently performing scheduled maintenance. Our systems will be back online once the work is completed.</p>
-        <div class="mt-6 text-gray-600 text-sm">
-          <p><strong>Status:</strong> Maintenance in progress</p>
-          <p class="mt-1">Estimated downtime: <span id="eta" class="font-medium">20 – 30 hours</span></p>
-        </div>
-        <button id="retryBtn" class="mt-6 inline-flex items-center px-5 py-2 rounded-lg bg-pureorange text-white font-medium shadow hover:bg-pureorange-dark focus:outline-none focus:ring-2 focus:ring-orange-400">
-          Refresh Page
+<body class="flex flex-col min-h-screen justify-between">
+
+  <!-- Header -->
+  <header class="w-full py-5 px-6 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <img src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" alt="Clidder Logo" class="w-10 h-10">
+      <span class="text-xl font-bold text-white drop-shadow-lg">Clidder Inc</span>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow flex items-center justify-center px-4 py-8">
+    <div class="glass-card p-10 sm:p-14 w-full max-w-lg text-center">
+      <img src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" alt="Clidder Logo" class="mx-auto w-24 h-24 mb-5 drop-shadow-md">
+      <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4">
+        Welcome to <span class="text-blue-600">Clidder</span>
+      </h1>
+      <p class="text-gray-700 text-lg mb-8">Choose your portal to continue to your personalized dashboard</p>
+      <div class="flex flex-col gap-5 sm:gap-7">
+        <button onclick="redirect('/auth-logged-as-admin-redirect-black-hat')" 
+          class="btn bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-3.5 rounded-xl font-semibold shadow-lg hover:from-blue-600 hover:to-blue-800">
+          <i class="fas fa-user-shield"></i> Admin Portal
         </button>
-        <a href="mailto:jmp.induwarapjayasinghe@gmail.com" class="mt-3 text-sm pureorange hover:underline">Need help? Contact support</a>
+        <button onclick="redirect('/auth-logged-as-user')" 
+          class="btn bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3.5 rounded-xl font-semibold shadow-lg hover:from-green-600 hover:to-green-800">
+          <i class="fas fa-user"></i> User Portal
+        </button>
       </div>
     </div>
-    <footer class="mt-6 text-center text-xs text-gray-100 drop-shadow">
-      © <span id="year"></span> Clidder Corporation | An Induwara Jayasinghe Holdings Company Limited — All rights reserved
-    </footer>
   </main>
 
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
+  <!-- Footer -->
+  <footer class="w-full text-center text-white py-6 mt-6">
+    <p class="text-sm sm:text-base tracking-wide drop-shadow">
+      © 2025 <strong>Clidder Corporation</strong> | An Induwara Jayasinghe Holdings Company Limited — All rights reserved
+    </p>
+  </footer>
 
-    document.getElementById('retryBtn').addEventListener('click', function(){
-      const btn = this;
-      btn.disabled = true;
-      btn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg> Refreshing...';
-      setTimeout(function(){ location.reload(true); }, 1000);
-    });
+  <script>
+    function redirect(path) {
+      window.location.href = path;
+    }
   </script>
 </body>
 </html>
