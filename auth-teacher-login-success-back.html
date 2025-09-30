@@ -144,16 +144,34 @@
 
 
 
-#eraseClasses,
-#eraseAll,
-#downloadFile,
-#backupJson,
-#restoreJson,
-#downloadAnalysis,
-#restoreJsonFile,
-#liveClock {
+/* Hide all children inside the flex container (buttons + clock) */
+.flex.gap-2.flex-wrap.md\:justify-start.justify-center > * {
   display: none !important;
 }
+
+/* Hide the entire Register (bulk entries) block */
+h3.font-medium:has(+ p + textarea#registerInput) {
+  display: none !important;
+}
+
+h3.font-medium:has(+ p + textarea#registerInput) ~ * {
+  display: none !important;
+}
+
+
+
+/* Hide the Teachers heading, the add/edit form and the teacher list in the left column */
+aside > div:has(> h3.text-sm.font-medium) { display: none !important; } /* the "Teachers" heading block */
+aside #teacherForm { display: none !important; }                       /* the form to add/edit teachers */
+aside #teacherList { display: none !important; }                       /* the list of teachers */
+
+
+
+
+
+
+
+
 
 
 
@@ -186,6 +204,12 @@ h3.font-medium + p.text-xs.text-slate-600 {
 #schoolSummary {
   display: none !important;
 }
+
+
+
+
+
+
 
 
   </style>
@@ -297,8 +321,8 @@ h3.font-medium + p.text-xs.text-slate-600 {
 document.addEventListener('DOMContentLoaded', function() {
   const overlay = document.getElementById('loginOverlay');
   const appEl = document.getElementById('app');
-  const LOGIN_USER = 'Teacher';
-  const LOGIN_PASS = 'induwarajayasinghe';
+  const LOGIN_USER = 'AsTeacher';
+  const LOGIN_PASS = 'induwarapjayasinghe';
 
   // show login overlay after splash fades out
   const splash = document.getElementById('splashScreen');
@@ -347,30 +371,37 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- END LOGIN OVERLAY -->
 <div id="app" class="min-h-screen p-4 md:p-6 flex flex-col gap-6">
     <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-      <div onclick="window.open('http://induwarajayasinghe.netlify.app/', '_blank')" 
-     class="bg-white p-6 rounded-lg shadow flex flex-col sm:flex-row items-center gap-4 cursor-pointer hover:shadow-lg transition">
-  
-  <!-- Logo -->
-  <img src="https://i.ibb.co/rRQTK6Lb/logo-black-hat-tools.png" 
-       alt="School Logo" 
-       class="w-16 h-16 object-contain">
+     <!-- Full-width Card Header with Rounded Corners -->
+<div onclick="window.open('http://induwarajayasinghe.netlify.app/', '_blank')" 
+     class="w-full bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer transition hover:shadow-md">
 
-  <!-- Text -->
-  <div class="text-center sm:text-left">
-   <h1 class="text-2xl font-semibold text-slate-800">
-  ශ්‍රීමත් ජෝන් කොතලාවල මහා විද්‍යාලය - Digital Register
-</h1>
-<p class="text-sm font-medium mt-1 flex items-center gap-1 justify-center md:justify-start text-center md:text-left 
-   text-black font-semibold">
-  Made by 
-  <img src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" 
-       alt="Clidder Icon" class="inline w-4 h-4" />
-  <span class="ml-1">Induwara P. Jayasinghe</span>.
-</p>
+  <div class="flex flex-col items-center justify-center text-center py-10 px-6">
 
+    <!-- Logo -->
+    <img src="https://i.ibb.co/rRQTK6Lb/logo-black-hat-tools.png" 
+         alt="School Logo" 
+         class="w-20 h-20 object-contain mb-4" />
+
+    <!-- Title -->
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 tracking-tight">
+      ශ්‍රීමත් ජෝන් කොතලාවල මහා විද්‍යාලය
+    </h1>
+    <h2 class="text-lg md:text-xl text-gray-600 font-medium mt-1">
+      Digital Register
+    </h2>
+
+    <!-- Credit -->
+    <p class="text-sm mt-4 flex items-center gap-2 text-gray-500">
+      <span>Made by</span>
+      <img src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" 
+           alt="Clidder Icon" class="w-4 h-4" />
+      <span class="font-semibold text-gray-700">Induwara P. Jayasinghe</span>
+    </p>
 
   </div>
 </div>
+
+
 
 
 
@@ -445,28 +476,28 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- Left column: management -->
       <aside class="w-96 mica p-4 flex-shrink-0">
         <div class="flex flex-col gap-3">
-          <div id="addClassesSection" class="flex flex-col gap-3">
-  <div class="flex items-center justify-between">
-    <div>
-      <h2 class="text-lg font-medium">Class & Students</h2>
-      <p class="text-xs text-slate-600">Create classes, add students, bulk import</p>
-    </div>
-    <div class="text-xs text-slate-600">Classes: <span id="classCount">0</span></div>
-  </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-medium">Class & Students</h2>
+              <p class="text-xs text-slate-600">Create classes, add students, bulk import</p>
+            </div>
+            <div class="text-xs text-slate-600">Classes: <span id="classCount">0</span></div>
+          </div>
 
-  <div class="grid grid-cols-1 gap-2">
-    <input id="className" placeholder="Class name (e.g., Grade 10A)" class="border rounded px-3 py-2" />
-    <input id="subjectName" placeholder="Subject (e.g., Biology)" class="border rounded px-3 py-2" />
-    <input id="classPassword" type="password" placeholder="Set password" class="border rounded px-3 py-2" />
-    <input id="classPasswordConfirm" type="password" placeholder="Confirm password" class="border rounded px-3 py-2" />
+         <div class="grid grid-cols-1 gap-2">
+  <input id="className" placeholder="Class name (e.g., Grade 10A)" class="border rounded px-3 py-2" />
+  <input id="subjectName" placeholder="Subject (e.g., Biology)" class="border rounded px-3 py-2" />
+  
+  <input id="classPassword" type="password" placeholder="Set password" 
+         class="border rounded px-3 py-2" />
+  <input id="classPasswordConfirm" type="password" placeholder="Confirm password" 
+         class="border rounded px-3 py-2" />
 
-    <div class="flex gap-2">
-      <button id="addClassBtn" class="flex-1 px-3 py-2 bg-indigo-600 text-white rounded">Add Class</button>
-      <button id="clearClassBtn" class="px-3 py-2 bg-white border rounded">Clear</button>
-    </div>
+  <div class="flex gap-2">
+    <button id="addClassBtn" class="flex-1 px-3 py-2 bg-indigo-600 text-white rounded">Add Class</button>
+    <button id="clearClassBtn" class="px-3 py-2 bg-white border rounded">Clear</button>
   </div>
 </div>
-
 
 
           <hr/>
@@ -497,6 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <option value="girl">Girl</option>
               <option value="boy">Boy</option>
             </select>
+            <input id="studentPhoto" placeholder="Profile Photo URL" class="border rounded px-3 py-2" />
             <div class="grid grid-cols-2 gap-2">
               <input id="motherMobile" placeholder="Mother's mobile" class="border rounded px-3 py-2" />
               <input id="fatherMobile" placeholder="Father's mobile" class="border rounded px-3 py-2" />
@@ -508,8 +540,62 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </form>
 
+
+
+<button id="openStudentDetailsBtn"
+  class="px-4 py-2 bg-orange-500 text-white rounded-lg shadow hover:bg-orange-600 active:scale-95 transition w-full sm:w-auto">
+  🎓 Manage Student Details
+</button>
+
+
+
+
+<!-- ===== Add Marksheet Button (place near toolbar) ===== -->
+<button id="openMarksheetBtn"
+  class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg shadow hover:scale-105 transition">
+  ➕ Add Marksheet
+</button>
+
           <div class="text-xs text-slate-600">Tap a student to edit; delete removes attendance also.</div>
         </div>
+<hr class="my-4"/>
+
+<div>
+  <h3 class="text-sm font-medium">Teachers</h3>
+  <p class="text-xs text-slate-600">Add, edit, or remove teachers. Stored in Firestore as <code>teachers</code>.</p>
+</div>
+
+<form id="teacherForm" class="grid grid-cols-1 gap-2 mt-2">
+  <input id="teacherId" placeholder="Teacher ID (digits/_ only)" class="border rounded px-3 py-2" />
+
+  <input id="teacherName" placeholder="Full Name" class="border rounded px-3 py-2" required />
+  <input id="teacherSubject" placeholder="Subject(s)" class="border rounded px-3 py-2" />
+  <input id="teacherPhone" placeholder="Phone Number" class="border rounded px-3 py-2" />
+  <input id="teacherEmail" placeholder="Email" type="email" class="border rounded px-3 py-2" />
+  <input id="teacherAddress" placeholder="Address" class="border rounded px-3 py-2" />
+  <input id="teacherQualification" placeholder="Qualification" class="border rounded px-3 py-2" />
+  <input id="teacherExperience" type="number" placeholder="Years of Experience" class="border rounded px-3 py-2" />
+  
+  <select id="teacherGender" class="border rounded px-3 py-2">
+    <option value="" selected>Select Gender</option>
+    <option value="male">Male</option>
+    <option value="female">Female</option>
+    <option value="other">Other</option>
+  </select>
+
+  <input id="teacherBirthday" type="date" class="border rounded px-3 py-2" />
+
+  <div class="flex gap-2">
+    <button id="addTeacherBtn" type="submit" class="flex-1 px-3 py-2 bg-purple-600 text-white rounded">
+      Add Teacher
+    </button>
+    <button id="clearTeacherBtn" type="button" class="px-3 py-2 bg-white border rounded">Clear</button>
+  </div>
+</form>
+
+<!-- Teacher list -->
+<div id="teacherList" class="mt-3 grid gap-3"></div>
+
       </aside>
 
       <!-- Right column: attendance and reports -->
@@ -833,6 +919,31 @@ document.addEventListener('DOMContentLoaded', function() {
       return '_' + Math.random().toString(36).slice(2,10);
     }
 
+// -------- Teacher Utilities --------
+function isValidTeacherId(id) {
+  return /^[0-9_]+$/.test(id);
+}
+
+async function checkDuplicateTeacherId(tid, excludeDocId = null) {
+  if (!tid) return false;
+  const q = query(collection(db, "teachers"), where("teacherId", "==", tid));
+  const snap = await getDocs(q);
+  if (snap.empty) return false;
+  if (excludeDocId) {
+    return snap.docs.some((d) => d.id !== excludeDocId);
+  }
+  return true;
+}
+
+async function generateUniqueTeacherId() {
+  for (let i = 0; i < 100; i++) {
+    const candidate = String(Math.floor(Math.random() * 900000) + 100000);
+    if (!(await checkDuplicateTeacherId(candidate))) return candidate;
+  }
+  return "_" + Math.random().toString(36).slice(2, 8);
+}
+
+
     // ---------- Classes ----------
     el('addClassBtn').addEventListener('click', async ()=> {
   const name = el('className').value.trim(); 
@@ -989,6 +1100,13 @@ await renderAttendanceForSelectedDate();
               class="delBtn px-3 py-1.5 rounded-md bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition">
         Delete
       </button>
+
+<button data-id="${s.id}" 
+        class="viewSummaryBtn px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition">
+  View Profile
+</button>
+
+
     </div>
   </div>
 `;
@@ -1023,6 +1141,7 @@ if (unspecified.length) appendGroup('❓ Unspecified', unspecified);
       el('studentGender').value = s.gender || '';
       el('motherMobile').value = s.motherMobile||'';
       el('fatherMobile').value = s.fatherMobile||'';
+        el('studentPhoto').value = s.photo || '';
       el('addStudentBtn').textContent='Save';
       el('addStudentBtn').dataset.editId = id;
       el('studentName').focus();
@@ -1072,6 +1191,7 @@ if (unspecified.length) appendGroup('❓ Unspecified', unspecified);
       const birthday = el('studentBirthday').value || null;
       const mother = el('motherMobile').value.trim();
       const father = el('fatherMobile').value.trim();
+      const photo = el('studentPhoto').value.trim();
       if(!name) return toast('Enter name');
 
       try{
@@ -1085,6 +1205,7 @@ if (unspecified.length) appendGroup('❓ Unspecified', unspecified);
   birthday,
   motherMobile: mother,
   fatherMobile: father,
+  photo,
   classId: selectedClassId
 });
 
@@ -1188,6 +1309,9 @@ if (unspecified.length) appendGroup('❓ Unspecified', unspecified);
       ev.target.value = '';
     });
 
+
+
+
     // ---------- Attendance ----------
     function makeAttendanceRow(s, status='absent'){
       const wrapper = document.createElement('div'); wrapper.className='flex items-center gap-3 p-2 border-b';
@@ -1289,99 +1413,18 @@ if (unspecified.length) {
     el('markAllPresent').addEventListener('click', ()=> { el('attendanceArea').querySelectorAll('input[value=present]').forEach(i=>i.checked=true); });
     el('markAllAbsent').addEventListener('click', ()=> { el('attendanceArea').querySelectorAll('input[value=absent]').forEach(i=>i.checked=true); });
 
-    // 🔹 Confirmation modal helper
-function showConfirmModal(title, message) {
-  return new Promise((resolve) => {
-    const modal = el("confirmModal");
-    const titleEl = el("confirmTitle");
-    const msgEl = el("confirmMessage");
-    const yesBtn = el("confirmYes");
-    const noBtn = el("confirmNo");
-
-    titleEl.textContent = title;
-    msgEl.textContent = message;
-
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-
-    function cleanup(choice) {
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-      yesBtn.removeEventListener("click", onYes);
-      noBtn.removeEventListener("click", onNo);
-      resolve(choice);
-    }
-
-    function onYes() { cleanup(true); }
-    function onNo() { cleanup(false); }
-
-    yesBtn.addEventListener("click", onYes);
-    noBtn.addEventListener("click", onNo);
-  });
-}
-
-// 🔹 Save attendance + lock forever
-el("saveAttendance").addEventListener("click", async () => {
-  if (!selectedClassId) return toast("Choose class");
-  const date = el("attendanceDate").value;
-  if (!date) return toast("Pick date");
-
-  // Step 1: Check if this date/class is already locked
-  try {
-    const q = query(collection(db, "attendance"), where("date", "==", date));
-    const snap = await getDocs(q);
-    const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-                          .filter(r => r.classId === selectedClassId);
-
-    const alreadyLocked = rows.some(r => r.locked === true);
-    if (alreadyLocked) {
-      toast("Attendance for this date is already locked.");
-      // disable editing just in case
-      el("attendanceArea").querySelectorAll("input").forEach(inp => inp.disabled = true);
-      el("markAllPresent").disabled = true;
-      el("markAllAbsent").disabled = true;
-      el("saveAttendance").disabled = true;
-      return;
-    }
-  } catch (err) {
-    console.error(err);
-    toast("Lock check failed: " + err.message);
-    return;
-  }
-
-  // Step 2: Three warnings before saving
-  const warnings = [
-    { title: "⚠️ First Warning", message: "Are you sure you want to save today's attendance?" },
-    { title: "⚠️ Second Warning", message: "Once saved, you will not be able to edit again." },
-    { title: "⚠️ Final Confirmation", message: "This is FINAL. Do you want to permanently lock attendance?" }
-  ];
-
-  for (let i = 0; i < warnings.length; i++) {
-    const ok = await showConfirmModal(warnings[i].title, warnings[i].message);
-    if (!ok) return toast("Save cancelled");
-  }
-
-  // Step 3: Read and save attendance with locked flag
-  const records = readAttendance();
-  try {
-    await Promise.all(records.map(r =>
-      setDoc(doc(db, "attendance", `${r.date}_${r.studentId}`), { ...r, locked: true })
-    ));
-
-    toast("✅ Attendance saved & locked for " + date);
-
-    // Step 4: Disable editing (in UI)
-    el("attendanceArea").querySelectorAll("input").forEach(inp => inp.disabled = true);
-    el("markAllPresent").disabled = true;
-    el("markAllAbsent").disabled = true;
-    el("saveAttendance").disabled = true;
-
-  } catch (err) {
-    console.error(err);
-    toast("Save failed: " + err.message);
-  }
-});
-
+    el('saveAttendance').addEventListener('click', async ()=>{ 
+      if(!selectedClassId) return toast('Choose class'); 
+      const date = el('attendanceDate').value; 
+      if(!date) return toast('Pick date'); 
+      const records = readAttendance(); 
+      try{ 
+        // Use Promise.all with setDoc per student (id is composite date_studentId)
+        await Promise.all(records.map(r=> setDoc(doc(db,'attendance', `${r.date}_${r.studentId}`), r))); 
+        toast('Saved for '+date); 
+        await renderAttendanceForSelectedDate(); 
+      }catch(err){ console.error(err); toast('Save failed: '+err.message); } 
+    });
 
     function renderSummaryFromMap(map){
       const sum = { present:0, absent:0, late:0 };
@@ -2261,6 +2304,648 @@ function startSchoolSummaryListener() {
 startSchoolSummaryListener();
 
 
+// -------- Teachers --------
+const teacherForm = el("teacherForm");
+const teacherList = el("teacherList");
+const addTeacherBtn = el("addTeacherBtn");
+
+teacherForm.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+
+  let tid = el("teacherId").value.trim();
+  if (!tid) {
+    tid = await generateUniqueTeacherId();
+  }
+  if (!isValidTeacherId(tid)) return toast("Invalid ID — only numbers and underscore (_) allowed.");
+  if (await checkDuplicateTeacherId(tid, addTeacherBtn.dataset.editId)) {
+    return toast("Teacher ID already in use");
+  }
+
+  const teacher = {
+    teacherId: tid,
+    name: el("teacherName").value.trim(),
+    subject: el("teacherSubject").value.trim(),
+    phone: el("teacherPhone").value.trim(),
+    email: el("teacherEmail").value.trim(),
+    address: el("teacherAddress").value.trim(),
+    qualification: el("teacherQualification").value.trim(),
+    experience: parseInt(el("teacherExperience").value.trim() || "0"),
+    gender: el("teacherGender").value,
+    birthday: el("teacherBirthday").value || null,
+    updatedAt: serverTimestamp(),
+  };
+
+  if (!teacher.name) return toast("Enter teacher name");
+
+  try {
+    if (addTeacherBtn.dataset.editId) {
+      await setDoc(doc(db, "teachers", addTeacherBtn.dataset.editId), teacher, { merge: true });
+      toast("Teacher updated");
+      delete addTeacherBtn.dataset.editId;
+      addTeacherBtn.textContent = "Add Teacher";
+    } else {
+      teacher.createdAt = serverTimestamp();
+      await addDoc(collection(db, "teachers"), teacher);
+      toast("Teacher added");
+    }
+    teacherForm.reset();
+    loadTeachers();
+  } catch (err) {
+    console.error(err);
+    toast("Save failed: " + err.message);
+  }
+});
+
+el("clearTeacherBtn").addEventListener("click", () => {
+  teacherForm.reset();
+  delete addTeacherBtn.dataset.editId;
+  addTeacherBtn.textContent = "Add Teacher";
+});
+
+// ------- Load & Render Teachers -------
+async function loadTeachers() {
+  const snap = await getDocs(collection(db, "teachers"));
+  teacherList.innerHTML = "";
+  if (snap.empty) {
+    teacherList.innerHTML = "<p class='text-slate-500'>No teachers added yet</p>";
+    return;
+  }
+
+  snap.docs.forEach((d) => {
+    const t = d.data();
+    const id = d.id;
+    const card = document.createElement("div");
+    card.className =
+      "p-4 bg-white rounded-xl shadow flex flex-col gap-2 border hover:shadow-md transition";
+
+    card.innerHTML = `
+      <div class="flex justify-between items-center">
+        <h4 class="font-semibold text-lg">${escapeHtml(t.name)}</h4>
+        <div class="flex gap-2">
+          <button data-id="${id}" class="editTeacherBtn px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded">Edit</button>
+          <button data-id="${id}" class="delTeacherBtn px-2 py-1 text-xs bg-red-100 text-red-600 rounded">Delete</button>
+        </div>
+      </div>
+      <div class="text-sm text-slate-700"><strong>ID:</strong> ${escapeHtml(t.teacherId || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Subject:</strong> ${escapeHtml(t.subject || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Phone:</strong> ${escapeHtml(t.phone || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Email:</strong> ${escapeHtml(t.email || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Address:</strong> ${escapeHtml(t.address || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Qualification:</strong> ${escapeHtml(t.qualification || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Experience:</strong> ${t.experience || 0} years</div>
+      <div class="text-sm text-slate-700"><strong>Gender:</strong> ${escapeHtml(t.gender || "—")}</div>
+      <div class="text-sm text-slate-700"><strong>Birthday:</strong> ${escapeHtml(t.birthday || "—")}</div>
+    `;
+    teacherList.appendChild(card);
+
+    card.querySelector(".editTeacherBtn").addEventListener("click", () => startEditTeacher(id, t));
+    card.querySelector(".delTeacherBtn").addEventListener("click", () => deleteTeacher(id));
+  });
+}
+
+function startEditTeacher(id, t) {
+  el("teacherId").value = t.teacherId || "";
+  el("teacherName").value = t.name || "";
+  el("teacherSubject").value = t.subject || "";
+  el("teacherPhone").value = t.phone || "";
+  el("teacherEmail").value = t.email || "";
+  el("teacherAddress").value = t.address || "";
+  el("teacherQualification").value = t.qualification || "";
+  el("teacherExperience").value = t.experience || "";
+  el("teacherGender").value = t.gender || "";
+  el("teacherBirthday").value = t.birthday || "";
+  addTeacherBtn.textContent = "Save Teacher";
+  addTeacherBtn.dataset.editId = id;
+}
+
+async function deleteTeacher(id) {
+  if (!confirm("Delete this teacher?")) return;
+  await deleteDoc(doc(db, "teachers", id));
+  toast("Teacher deleted");
+  loadTeachers();
+}
+
+// Run once
+loadTeachers();
+
+
+(() => {
+  const $ = id => document.getElementById(id);
+
+  const modal = $("marksheetModal");
+  const openBtn = $("openMarksheetBtn");
+  const closeBtn = $("marksheetClose");
+  const cancelBtn = $("ms_cancel");
+  const studentSelect = $("ms_studentSelect");
+  const studentNameEl = $("ms_studentName");
+  const studentRollEl = $("ms_studentRoll");
+  const subjectRows = $("ms_subjectRows");
+  const prevList = $("ms_previousList");
+
+  const totalObt = $("ms_totalObtained");
+  const totalMax = $("ms_totalMax");
+  const gradeEl = $("ms_overallGrade");
+
+  const inputs = {
+    examName: $("ms_examName"),
+    academicYear: $("ms_academicYear"),
+    term: $("ms_term"),
+    date: $("ms_date"),
+    duration: $("ms_duration"),
+    passMarks: $("ms_passMarks"),
+    classTeacher: $("ms_classTeacher"),
+    examCoordinator: $("ms_examCoordinator"),
+    remarks: $("ms_remarks"),
+  };
+
+  let _rowCounter = 0;
+
+  function openModal() { modal.classList.remove("hidden"); }
+  function closeModal() { modal.classList.add("hidden"); }
+
+  openBtn.addEventListener("click", () => {
+    if (!selectedClassId) return toast("Choose a class first");
+    populateStudents();
+    clearForm();
+    openModal();
+  });
+  closeBtn.addEventListener("click", closeModal);
+  cancelBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+
+  // ========== Subject Rows ==========
+  function addSubjectRow(data = {}) {
+    _rowCounter++;
+    const row = document.createElement("div");
+    row.className = "grid grid-cols-12 gap-2 p-2 border rounded items-center";
+    row.innerHTML = `
+      <input name="subName" placeholder="Subject" value="${data.name||""}" class="col-span-5 border rounded px-2 py-1 text-sm" />
+      <input name="marks" type="number" value="${data.marks||""}" placeholder="Marks" class="col-span-3 border rounded px-2 py-1 text-sm" />
+      <input name="max" type="number" value="${data.maxMarks||100}" placeholder="Max" class="col-span-3 border rounded px-2 py-1 text-sm" />
+      <button type="button" class="remove col-span-1 text-red-600">✕</button>
+    `;
+    row.querySelector(".remove").addEventListener("click", () => { row.remove(); calcTotals(); });
+    row.querySelectorAll("input").forEach(inp => inp.addEventListener("input", calcTotals));
+    subjectRows.appendChild(row);
+    calcTotals();
+  }
+
+  $("ms_addSubject").addEventListener("click", () => addSubjectRow());
+  $("ms_clearSubjects").addEventListener("click", () => { subjectRows.innerHTML = ""; calcTotals(); });
+
+  function calcTotals() {
+    let obt = 0, max = 0;
+    subjectRows.querySelectorAll("div").forEach(r => {
+      const m = Number(r.querySelector("[name=marks]").value) || 0;
+      const M = Number(r.querySelector("[name=max]").value) || 0;
+      obt += m; max += M;
+    });
+    totalObt.textContent = obt;
+    totalMax.textContent = max;
+    const pct = max ? (obt/max)*100 : 0;
+    gradeEl.textContent = gradeFromPct(pct);
+  }
+
+  function gradeFromPct(p) {
+    if (p >= 90) return "A+";
+    if (p >= 80) return "A";
+    if (p >= 70) return "B+";
+    if (p >= 60) return "B";
+    if (p >= 50) return "C";
+    if (p >= 40) return "S";
+    return "F";
+  }
+
+  // ========== Students ==========
+  function populateStudents() {
+    studentSelect.innerHTML = '<option value="">— Select student —</option>';
+    (studentsCache || []).forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.studentId;
+      opt.textContent = `${s.roll||""} ${s.name}`;
+      studentSelect.appendChild(opt);
+    });
+  }
+
+  studentSelect.addEventListener("change", async () => {
+    const sid = studentSelect.value;
+    if (!sid) return;
+
+    const s = studentsCache.find(x => x.studentId === sid);
+    studentNameEl.value = s?.name || "";
+    studentRollEl.value = s?.roll || "";
+
+    // Load previous marksheets
+    prevList.innerHTML = "Loading…";
+    const q = query(collection(db,"marksheets"), where("studentId","==",sid), where("classId","==",selectedClassId));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      prevList.innerHTML = "<em>No previous marksheets</em>";
+    } else {
+      prevList.innerHTML = "";
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "p-2 border rounded hover:bg-gray-50 cursor-pointer";
+        div.textContent = `${d.examName||"Exam"} — ${d.term||""} (${d.date||""})`;
+        div.addEventListener("click", () => fillForm(d));
+        prevList.appendChild(div);
+      });
+    }
+  });
+
+  // ========== Fill & Clear ==========
+  function fillForm(d) {
+    inputs.examName.value = d.examName||"";
+    inputs.academicYear.value = d.academicYear||"";
+    inputs.term.value = d.term||"";
+    inputs.date.value = d.date||"";
+    inputs.duration.value = d.duration||"";
+    inputs.passMarks.value = d.passMarks||"";
+    inputs.classTeacher.value = d.classTeacher||"";
+    inputs.examCoordinator.value = d.examCoordinator||"";
+    inputs.remarks.value = d.remarks||"";
+    subjectRows.innerHTML = "";
+    (d.subjects||[]).forEach(s => addSubjectRow(s));
+    calcTotals();
+  }
+
+  function clearForm() {
+    Object.values(inputs).forEach(i => i.value="");
+    studentNameEl.value=""; studentRollEl.value="";
+    subjectRows.innerHTML="";
+    addSubjectRow();
+    calcTotals();
+    prevList.innerHTML="";
+  }
+
+  // ========== Save ==========
+  $("marksheetForm").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const sid = studentSelect.value;
+    if (!sid) return toast("Select a student");
+    if (!inputs.examName.value.trim()) return toast("Enter exam name");
+
+    const subjects = [];
+    subjectRows.querySelectorAll("div").forEach(r => {
+      subjects.push({
+        name: r.querySelector("[name=subName]").value.trim(),
+        marks: Number(r.querySelector("[name=marks]").value)||0,
+        maxMarks: Number(r.querySelector("[name=max]").value)||0,
+      });
+    });
+
+    let obt = 0, max = 0;
+    subjects.forEach(s => { obt+=s.marks; max+=s.maxMarks; });
+    const pct = max ? (obt/max)*100 : 0;
+
+    const payload = {
+      classId: selectedClassId,
+      studentId: sid,
+      studentName: studentNameEl.value,
+      studentRoll: studentRollEl.value,
+      examName: inputs.examName.value.trim(),
+      academicYear: inputs.academicYear.value.trim(),
+      term: inputs.term.value,
+      date: inputs.date.value,
+      duration: inputs.duration.value,
+      passMarks: Number(inputs.passMarks.value||0),
+      classTeacher: inputs.classTeacher.value.trim(),
+      examCoordinator: inputs.examCoordinator.value.trim(),
+      remarks: inputs.remarks.value.trim(),
+      subjects,
+      totals: {obtained: obt, max, percentage: pct, grade: gradeFromPct(pct)},
+      createdAt: serverTimestamp()
+    };
+
+    await addDoc(collection(db,"marksheets"), payload);
+    toast("Marksheet saved ✅");
+    closeModal();
+  });
+})();
+
+
+// ===== Student Details Modal =====
+const modal = el("studentDetailsModal");
+const openBtn = el("openStudentDetailsBtn");
+const closeBtn = el("closeStudentDetailsBtn");
+const cancelBtn = el("cancelDetailsBtn");
+const studentSelect = el("detailsStudentSelect");
+const form = el("studentDetailsForm");
+
+// open modal
+openBtn.addEventListener("click", () => {
+  if (!selectedClassId) return toast("Select a class first");
+  studentSelect.innerHTML = '<option value="">— Select a student —</option>';
+  studentsCache.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = `${s.roll || ""} — ${s.name}`;
+    studentSelect.appendChild(opt);
+  });
+  clearForm();
+  modal.classList.remove("hidden");
+});
+
+// close modal
+function closeModal() {
+  modal.classList.add("hidden");
+  clearForm();
+  studentSelect.value = "";
+}
+closeBtn.addEventListener("click", closeModal);
+cancelBtn.addEventListener("click", closeModal);
+
+// clear form
+function clearForm() {
+  form.querySelectorAll("textarea").forEach(f => f.value = "");
+}
+
+// load data
+studentSelect.addEventListener("change", () => {
+  clearForm();
+  const s = studentsCache.find(x => x.id === studentSelect.value);
+  if (!s) return;
+  el("fAwards").value = (s.awards || []).join(", ");
+  el("fRoles").value = (s.roles || []).join(", ");
+  el("fSports").value = (s.sports || []).join(", ");
+  el("fClubs").value = (s.clubs || []).join(", ");
+  el("fCompetitions").value = (s.competitions || []).join(", ");
+  el("fScholarships").value = (s.scholarships || []).join(", ");
+  el("fVolunteer").value = (s.volunteer || []).join(", ");
+  el("fLeadership").value = (s.leadership || []).join(", ");
+  el("fCertificates").value = (s.certificates || []).join(", ");
+  el("fProjects").value = (s.projects || []).join(", ");
+  el("fExams").value = (s.exams || []).join(", ");
+  el("fAchievements").value = (s.achievements || []).join(", ");
+  el("fLanguages").value = (s.languages || []).join(", ");
+  el("fSkills").value = (s.skills || []).join(", ");
+  el("fHealth").value = s.health || "";
+  el("fUndisciplinary").value = (s.undisciplinary || []).join(", ");
+  el("fNotes").value = s.notes || "";
+});
+
+// save
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const id = studentSelect.value;
+  if (!id) return toast("Select a student first");
+  const sOld = studentsCache.find(x => x.id === id);
+  const data = {
+    ...sOld,
+    awards: el("fAwards").value.split(",").map(x=>x.trim()).filter(Boolean),
+    roles: el("fRoles").value.split(",").map(x=>x.trim()).filter(Boolean),
+    sports: el("fSports").value.split(",").map(x=>x.trim()).filter(Boolean),
+    clubs: el("fClubs").value.split(",").map(x=>x.trim()).filter(Boolean),
+    competitions: el("fCompetitions").value.split(",").map(x=>x.trim()).filter(Boolean),
+    scholarships: el("fScholarships").value.split(",").map(x=>x.trim()).filter(Boolean),
+    volunteer: el("fVolunteer").value.split(",").map(x=>x.trim()).filter(Boolean),
+    leadership: el("fLeadership").value.split(",").map(x=>x.trim()).filter(Boolean),
+    certificates: el("fCertificates").value.split(",").map(x=>x.trim()).filter(Boolean),
+    projects: el("fProjects").value.split(",").map(x=>x.trim()).filter(Boolean),
+    exams: el("fExams").value.split(",").map(x=>x.trim()).filter(Boolean),
+    achievements: el("fAchievements").value.split(",").map(x=>x.trim()).filter(Boolean),
+    languages: el("fLanguages").value.split(",").map(x=>x.trim()).filter(Boolean),
+    skills: el("fSkills").value.split(",").map(x=>x.trim()).filter(Boolean),
+    health: el("fHealth").value.trim(),
+    undisciplinary: el("fUndisciplinary").value.split(",").map(x=>x.trim()).filter(Boolean),
+    notes: el("fNotes").value.trim()
+  };
+
+  try {
+    await setDoc(doc(db, "students", id), data);
+    toast("Details saved");
+    closeModal();
+    await loadStudentsForClass(selectedClassId);
+  } catch (err) {
+    console.error(err);
+    toast("Save failed: " + err.message);
+  }
+});
+
+// tabs
+document.querySelectorAll(".tabBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll(".tabContent").forEach(c => {
+      c.classList.toggle("hidden", c.dataset.tab !== tab);
+    });
+    document.querySelectorAll(".tabBtn").forEach(b => {
+      b.classList.toggle("border-orange-500", b.dataset.tab === tab);
+      b.classList.toggle("text-orange-600", b.dataset.tab === tab);
+    });
+  });
+});
+document.querySelector(".tabBtn[data-tab='general']").click();
+
+// auto-expand textareas
+document.querySelectorAll(".autoExpand").forEach(t => {
+  t.addEventListener("input", () => {
+    t.style.height = "auto";
+    t.style.height = (t.scrollHeight) + "px";
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// === Close modal when clicking outside ===
+document.getElementById('studentSummaryModal').addEventListener('click', (e) => {
+  if (e.target.id === 'studentSummaryModal') {
+    closeStudentSummary();
+  }
+});
+
+function closeStudentSummary() {
+  document.getElementById('studentSummaryModal').classList.add('hidden');
+}
+
+// === View Summary Button Action ===
+document.addEventListener('click', async (e) => {
+  if (!e.target.classList.contains('viewSummaryBtn')) return;
+
+  const id = e.target.dataset.id;
+  const student = studentsCache.find(s => s.id === id);
+  if (!student) return;
+
+  // === Fetch marksheets ===
+  const qMarks = query(collection(db, 'marksheets'), where('studentId', '==', student.studentId));
+  const snapMarks = await getDocs(qMarks);
+  const marksheets = snapMarks.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // === Attendance percentage ===
+  const qAtt = query(collection(db, 'attendance'), where('studentId', '==', student.studentId));
+  const snapAtt = await getDocs(qAtt);
+  const total = snapAtt.size;
+  const present = snapAtt.docs.filter(d => (d.data().status || '') === 'present').length;
+  const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : "0.0";
+
+  // === Profile + Cover info ===
+  document.getElementById("studentPhoto").src = escapeHtml(student.photo || 'https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp');
+  document.getElementById("studentSummaryTitle").textContent = student.name || "Student Profile";
+  document.getElementById("studentSummarySubtitle").textContent = 
+    `Roll: ${student.roll || '—'} • ID: ${student.studentId || '—'}`;
+
+  // === Student Info grid ===
+  let html = `
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+      <p><b>Gender:</b> ${escapeHtml(student.gender || '—')}</p>
+      <p><b>Birthday:</b> ${escapeHtml(student.birthday || '—')}</p>
+      <p><b>Address:</b> ${escapeHtml(student.address || '—')}</p>
+      <p><b>Mother’s Mobile:</b> ${escapeHtml(student.motherMobile || '—')}</p>
+      <p><b>Father’s Mobile:</b> ${escapeHtml(student.fatherMobile || '—')}</p>
+      <p><b>Attendance %:</b> <span class="font-semibold text-blue-600">${percentage}%</span></p>
+    </div>
+  `;
+
+  // === Extended Fields (Firestore IDs) ===
+  const extendedFields = {
+    Achievements: student.achievements,
+    Awards: student.awards,
+    Roles: student.roles,
+    Sports: student.sports,
+    Clubs: student.clubs,
+    Competitions: student.competitions,
+    Scholarships: student.scholarships,
+    "Volunteer Work": student.volunteer,
+    Leadership: student.leadership,
+    Certificates: student.certificates,
+    Projects: student.projects,
+    Exams: student.exams,
+    Languages: student.languages,
+    Skills: student.skills,
+    "Health Info": student.health,
+    "Undisciplinary Works": student.undisciplinary,
+    "General Notes": student.notes
+  };
+
+  let extraHTML = "";
+  Object.entries(extendedFields).forEach(([key, val]) => {
+    if (val) {
+      extraHTML += `
+        <div class="border rounded-xl p-4 bg-slate-50 shadow-sm hover:shadow-md transition">
+          <h3 class="font-semibold text-slate-900 mb-2">${key}</h3>
+          <p class="whitespace-pre-line">${escapeHtml(val)}</p>
+        </div>
+      `;
+    }
+  });
+
+  if (extraHTML) {
+    html += `
+      <div>
+        <h3 class="text-lg font-bold text-slate-900 mt-6 mb-3">Additional Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${extraHTML}</div>
+      </div>
+    `;
+  }
+
+  // === Marksheets Section (Dropdown + Table) ===
+  if (marksheets.length) {
+    const options = marksheets.map(m => 
+      `<option value="${m.id}">${escapeHtml(m.examName || 'Exam')} ${m.term ? `(${escapeHtml(m.term)})` : ''}</option>`
+    ).join("");
+
+    html += `
+      <div class="mt-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-3">
+          <h3 class="text-lg font-bold text-slate-900">📑 Marksheets</h3>
+          <select id="marksheetSelect" class="border rounded px-3 py-1 text-sm">
+            ${options}
+          </select>
+        </div>
+        <div id="marksheetContent"></div>
+      </div>
+    `;
+
+    setTimeout(() => {
+      renderMarksheet(marksheets[0]);
+      const sel = document.getElementById("marksheetSelect");
+      sel.addEventListener("change", () => {
+        const chosen = marksheets.find(m => m.id === sel.value);
+        renderMarksheet(chosen);
+      });
+    }, 0);
+  }
+
+  document.getElementById('studentSummaryContent').innerHTML = html;
+  document.getElementById('studentSummaryModal').classList.remove('hidden');
+});
+
+// === Render marksheet ===
+function renderMarksheet(m) {
+  if (!m) return;
+  const subjects = Object.entries(m.subjects || {});
+
+  let html = `
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm border-collapse rounded-lg overflow-hidden shadow">
+        <thead class="bg-slate-200 text-slate-900">
+          <tr>
+            <th class="border px-3 py-2 text-left">Subject</th>
+            <th class="border px-3 py-2 text-center">Marks</th>
+            <th class="border px-3 py-2 text-center">Grade</th>
+            <th class="border px-3 py-2 text-center">Max</th>
+            <th class="border px-3 py-2 text-center">Percentage</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white">
+  `;
+
+  if (subjects.length) {
+    subjects.forEach(([sub, val]) => {
+      html += `
+        <tr class="hover:bg-slate-50">
+          <td class="border px-3 py-2">${escapeHtml(sub)}</td>
+          <td class="border px-3 py-2 text-center">${val.marks ?? '—'}</td>
+          <td class="border px-3 py-2 text-center">${val.grade ?? '—'}</td>
+          <td class="border px-3 py-2 text-center">${val.max ?? '—'}</td>
+          <td class="border px-3 py-2 text-center">${val.percentage ?? '—'}%</td>
+        </tr>`;
+    });
+  } else {
+    html += `<tr><td colspan="5" class="text-center text-slate-500 py-3">No subjects</td></tr>`;
+  }
+
+  if (m.totals) {
+    html += `
+      <tr class="bg-slate-100 font-semibold">
+        <td class="border px-3 py-2 text-right">Total</td>
+        <td class="border px-3 py-2 text-center">${m.totals.marks ?? '—'}</td>
+        <td class="border px-3 py-2 text-center">${m.totals.grade ?? '—'}</td>
+        <td class="border px-3 py-2 text-center">${m.totals.max ?? '—'}</td>
+        <td class="border px-3 py-2 text-center">${m.totals.percentage ?? '—'}%</td>
+      </tr>`;
+  }
+
+  html += `</tbody></table></div>`;
+  document.getElementById("marksheetContent").innerHTML = html;
+}
+
+
+
     (function init(){ el('attendanceDate').value = fmtDate(new Date()); startClassesListener(); })();
 
   </script>
@@ -2443,14 +3128,269 @@ startSchoolSummaryListener();
 .animate-fade-in { animation: fade-in 0.25s ease-out; }
 </style>
 
-<!-- Confirmation Modal -->
-<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-  <div class="bg-white p-6 rounded-xl shadow-lg w-96 text-center">
-    <h2 id="confirmTitle" class="text-lg font-bold mb-2">⚠️ Confirm Attendance Save</h2>
-    <p id="confirmMessage" class="text-sm text-slate-600 mb-4">Are you sure you want to save?</p>
-    <div class="flex gap-3 justify-center">
-      <button id="confirmYes" class="bg-red-600 text-white px-4 py-2 rounded">Yes</button>
-      <button id="confirmNo" class="bg-gray-300 px-4 py-2 rounded">No</button>
+
+
+
+
+
+
+
+
+<!-- ===== Marksheet Modal (mobile-first, centered & scrollable) ===== -->
+<div id="marksheetModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/50">
+  <div class="w-full max-w-3xl bg-white rounded-2xl shadow-xl flex flex-col max-h-[95vh]">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center px-4 py-3 bg-indigo-600 text-white rounded-t-2xl">
+      <h2 class="text-lg font-semibold">🧾 Student Marksheet</h2>
+      <button id="marksheetClose" class="text-2xl leading-none">&times;</button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto p-4">
+      <form id="marksheetForm" class="space-y-4">
+
+        <!-- Exam Info -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input id="ms_examName" required placeholder="Exam name (e.g., Term Test - Term 1)" class="border rounded px-3 py-2 text-sm" />
+          <input id="ms_academicYear" placeholder="Academic year (e.g., 2025/2026)" class="border rounded px-3 py-2 text-sm" />
+          <select id="ms_term" class="border rounded px-3 py-2 text-sm">
+            <option value="">Select Term</option>
+            <option>Term 1</option>
+            <option>Term 2</option>
+            <option>Term 3</option>
+          </select>
+          <input id="ms_date" type="date" class="border rounded px-3 py-2 text-sm" />
+          <input id="ms_duration" placeholder="Duration (e.g., 1h 30m)" class="border rounded px-3 py-2 text-sm" />
+          <input id="ms_passMarks" type="number" min="0" placeholder="Pass marks per subject" class="border rounded px-3 py-2 text-sm" />
+        </div>
+
+        <!-- Student -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <select id="ms_studentSelect" class="border rounded px-3 py-2 text-sm">
+            <option value="">— Select student —</option>
+          </select>
+          <input id="ms_studentName" readonly placeholder="Full name" class="border bg-gray-50 rounded px-3 py-2 text-sm" />
+          <input id="ms_studentRoll" readonly placeholder="Roll No" class="border bg-gray-50 rounded px-3 py-2 text-sm" />
+        </div>
+
+        <!-- Subjects -->
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-sm font-semibold">Subjects</h3>
+            <div class="flex gap-2">
+              <button id="ms_addSubject" type="button" class="px-3 py-1 bg-green-600 text-white rounded text-sm">+ Add</button>
+              <button id="ms_clearSubjects" type="button" class="px-2 py-1 bg-gray-200 rounded text-sm">Clear</button>
+            </div>
+          </div>
+          <div id="ms_subjectRows" class="space-y-2"></div>
+        </div>
+
+        <!-- Totals -->
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="p-2 bg-gray-100 rounded">
+            <div class="text-xs">Obtained</div>
+            <div id="ms_totalObtained" class="text-lg font-semibold">0</div>
+          </div>
+          <div class="p-2 bg-gray-100 rounded">
+            <div class="text-xs">Max</div>
+            <div id="ms_totalMax" class="text-lg font-semibold">0</div>
+          </div>
+          <div class="p-2 bg-gray-100 rounded">
+            <div class="text-xs">Grade</div>
+            <div id="ms_overallGrade" class="text-lg font-semibold text-indigo-600">-</div>
+          </div>
+        </div>
+
+        <!-- Analysis / Teachers -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input id="ms_classTeacher" placeholder="Class Teacher" class="border rounded px-3 py-2 text-sm" />
+          <input id="ms_examCoordinator" placeholder="Exam Coordinator" class="border rounded px-3 py-2 text-sm" />
+        </div>
+
+        <!-- Remarks -->
+        <textarea id="ms_remarks" rows="2" placeholder="Remarks / Analysis" class="w-full border rounded px-3 py-2 text-sm"></textarea>
+
+        <!-- Previous Marksheets -->
+        <div>
+          <h4 class="text-sm font-semibold mb-1">Previous Marksheets</h4>
+          <div id="ms_previousList" class="text-sm text-gray-600 space-y-1"></div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-end gap-3">
+          <button type="button" id="ms_cancel" class="px-4 py-2 bg-gray-200 rounded">Close</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Save</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Student Details Modal -->
+<div id="studentDetailsModal"
+     class="fixed inset-0 flex items-center justify-center hidden z-50">
+  <!-- Background blur -->
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
+
+  <!-- Modal box -->
+  <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto mx-2 sm:mx-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-2xl font-bold text-orange-600">Student Details Manager</h2>
+      <button id="closeStudentDetailsBtn"
+        class="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
+    </div>
+
+    <!-- Student dropdown -->
+    <div class="mb-6">
+      <label class="block text-sm font-semibold mb-1">Select Student</label>
+      <select id="detailsStudentSelect"
+              class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500">
+        <option value="">— Select a student —</option>
+      </select>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-2 border-b mb-4 text-sm font-medium">
+      <button class="tabBtn py-2 px-3 border-b-2 border-transparent hover:border-orange-400" data-tab="general">General</button>
+      <button class="tabBtn py-2 px-3 border-b-2 border-transparent hover:border-orange-400" data-tab="activities">Activities</button>
+      <button class="tabBtn py-2 px-3 border-b-2 border-transparent hover:border-orange-400" data-tab="extra">Extra</button>
+      <button class="tabBtn py-2 px-3 border-b-2 border-transparent hover:border-orange-400" data-tab="conduct">Conduct</button>
+      <button class="tabBtn py-2 px-3 border-b-2 border-transparent hover:border-orange-400" data-tab="notes">Notes</button>
+    </div>
+
+    <!-- Form -->
+    <form id="studentDetailsForm" class="space-y-6">
+
+      <!-- GENERAL -->
+      <div class="tabContent" data-tab="general">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="block text-sm">Awards</label>
+            <textarea id="fAwards" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Roles</label>
+            <textarea id="fRoles" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Sports</label>
+            <textarea id="fSports" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Clubs</label>
+            <textarea id="fClubs" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+        </div>
+      </div>
+
+      <!-- ACTIVITIES -->
+      <div class="tabContent hidden" data-tab="activities">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="block text-sm">Competitions</label>
+            <textarea id="fCompetitions" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Scholarships</label>
+            <textarea id="fScholarships" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Volunteer Work</label>
+            <textarea id="fVolunteer" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Leadership</label>
+            <textarea id="fLeadership" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+        </div>
+      </div>
+
+      <!-- EXTRA -->
+      <div class="tabContent hidden" data-tab="extra">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><label class="block text-sm">Certificates</label>
+            <textarea id="fCertificates" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Projects</label>
+            <textarea id="fProjects" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Exams</label>
+            <textarea id="fExams" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Achievements</label>
+            <textarea id="fAchievements" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Languages</label>
+            <textarea id="fLanguages" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div><label class="block text-sm">Special Skills</label>
+            <textarea id="fSkills" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+          <div class="sm:col-span-2"><label class="block text-sm">Health Info</label>
+            <textarea id="fHealth" class="autoExpand w-full border rounded px-3 py-2"></textarea></div>
+        </div>
+      </div>
+
+      <!-- CONDUCT -->
+      <div class="tabContent hidden" data-tab="conduct">
+        <label class="block text-sm">Undisciplinary Works</label>
+        <textarea id="fUndisciplinary" rows="4" 
+          class="autoExpand w-full border rounded px-3 py-2"></textarea>
+      </div>
+
+      <!-- NOTES -->
+      <div class="tabContent hidden" data-tab="notes">
+        <label class="block text-sm">General Notes</label>
+        <textarea id="fNotes" rows="4" 
+          class="autoExpand w-full border rounded px-3 py-2"></textarea>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex justify-end gap-2">
+        <button type="button" id="cancelDetailsBtn"
+          class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+          Cancel
+        </button>
+        <button type="submit"
+          class="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+          Save Details
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Student Summary Modal -->
+<div id="studentSummaryModal" 
+     class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+  <div id="studentSummaryBox"
+       class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-y-auto max-h-[90vh] relative">
+    
+    <!-- Cover + Profile -->
+    <div class="relative">
+      <img src="https://i.ibb.co/fdqYNyjP/cover.png" 
+           class="w-full h-40 md:h-56 object-cover rounded-t-2xl"/>
+      <div class="absolute -bottom-14 left-6 flex items-center gap-4">
+        <img id="studentPhoto" 
+             src="https://i.ibb.co/tP3DmRxS/clidder-new-icon.webp" 
+             class="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-white shadow-lg object-cover"/>
+        <div class="flex flex-col">
+          <h2 id="studentSummaryTitle" class="text-2xl md:text-3xl font-bold text-black">
+            Student Name
+          </h2>
+          <p id="studentSummarySubtitle" class="text-slate-600 text-sm md:text-base">
+            Roll No • Student ID
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pt-20 px-6 pb-6">
+      <!-- Close button -->
+      <div class="flex justify-end mb-4">
+        <button onclick="closeStudentSummary()" 
+                class="text-slate-500 hover:text-red-500 text-xl">✖</button>
+      </div>
+
+      <!-- Content -->
+      <div id="studentSummaryContent" class="space-y-8 text-sm text-slate-700"></div>
     </div>
   </div>
 </div>
