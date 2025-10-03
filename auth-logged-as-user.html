@@ -224,10 +224,8 @@ h3.font-medium + p.text-xs.text-slate-600 {
 </div>
 
 
-  
-<!-- LOGIN OVERLAY (inserted by Assistant) -->
-<!-- Fullscreen Twitter-style Auth Modal -->
-<div id="loginOverlay" aria-modal="true" role="dialog"
+<!-- LOGIN OVERLAY (User Login) -->
+<div id="userLoginOverlay" aria-modal="true" role="dialog"
      class="fixed inset-0 bg-black flex flex-col md:flex-row w-full h-full z-50 overflow-auto text-white font-sans hidden">
 
   <!-- Left panel (logo, hidden on mobile) -->
@@ -242,34 +240,38 @@ h3.font-medium + p.text-xs.text-slate-600 {
     <div class="w-full max-w-md space-y-6 text-center md:text-left">
 
       <h1 class="text-5xl font-extrabold leading-tight text-white">Digital Register</h1>
-      <h2 class="text-2xl font-bold text-[#ff7d1e]">From Induwara Jayasinghe</h2>
+      <h2 class="text-2xl font-bold text-[#ff7d1e]">User Login</h2>
 
       <!-- Form -->
-      <input id="loginUser"
+      <input id="userLoginUser"
              type="text"
              placeholder="Username"
              maxlength="100"
              class="w-full bg-black border border-gray-600 text-white rounded-full px-4 py-3 focus:border-[#ff7d1e] focus:ring-2 focus:ring-[#ff7d1e] outline-none transition" />
 
-      <input id="loginPass"
+      <input id="userLoginPass"
              type="password"
              placeholder="Password"
              maxlength="100"
              class="w-full bg-black border border-gray-600 text-white rounded-full px-4 py-3 focus:border-[#ff7d1e] focus:ring-2 focus:ring-[#ff7d1e] outline-none transition" />
 
       <div class="flex flex-col sm:flex-row gap-3">
-        <button id="loginSubmit"
+        <button id="userLoginSubmit"
                 class="flex-1 bg-[#ff7d1e] hover:bg-[#e66e0f] text-white py-3 rounded-full font-semibold transition">
           Sign In
         </button>
-        <button id="loginClear"
+        <button id="userLoginClear"
                 class="flex-1 border border-gray-600 text-white py-3 rounded-full font-semibold hover:bg-gray-900 transition">
           Clear
         </button>
       </div>
 
-      <div id="loginError" class="text-red-500 text-sm text-center hidden">
+      <div id="userLoginError" class="text-red-500 text-sm text-center hidden">
         Invalid username or password.
+      </div>
+
+      <div id="userLoginSuccess" class="text-green-500 text-sm text-center hidden">
+        ✅ Connected to Black Hat Server
       </div>
 
       <p class="text-center text-sm text-gray-400">
@@ -281,76 +283,132 @@ h3.font-medium + p.text-xs.text-slate-600 {
 </div>
 
 <style>
-  /* Center form vertically & horizontally on mobile */
   @media (max-width: 768px) {
-    #loginOverlay {
+    #userLoginOverlay {
       display: flex;
       justify-content: center;
       align-items: center;
     }
-    #loginOverlay .right {
+    #userLoginOverlay .right {
       width: 100%;
       max-width: 420px;
       padding: 20px;
     }
-    #loginOverlay .right > div {
+    #userLoginOverlay .right > div {
       text-align: center;
     }
   }
+  .fade-out {
+    animation: fadeOut 1s forwards;
+  }
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
 </style>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const overlay = document.getElementById('loginOverlay');
-  const appEl = document.getElementById('app');
-  const LOGIN_USER = 'User';
-  const LOGIN_PASS = 'induwara';
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-  // show login overlay after splash fades out
-  const splash = document.getElementById('splashScreen');
-  if (splash) {
-    const observer = new MutationObserver(() => {
-      if (splash.style.display === 'none' || splash.style.opacity === '0') {
-        overlay.style.display = 'flex';
-        observer.disconnect();
-      }
-    });
-    observer.observe(splash, { attributes: true, attributeFilter: ['style'] });
-  } else {
-    overlay.style.display = 'flex';
-  }
+  const firebaseConfig = {
+    apiKey: "AIzaSyDrFdwYhlj84GQ3eLzPctLgxZ572PHu7Tg",
+    authDomain: "x-clone-d4697.firebaseapp.com",
+    projectId: "x-clone-d4697",
+    storageBucket: "x-clone-d4697.appspot.com",
+    messagingSenderId: "438425139174",
+    appId: "1:438425139174:web:b1ebea6f124a245cf9c827",
+    measurementId: "G-PLQBYNDKQM"
+  };
 
-  const userInput = document.getElementById('loginUser');
-  const passInput = document.getElementById('loginPass');
-  const loginError = document.getElementById('loginError');
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-  document.getElementById('loginClear').addEventListener('click', () => {
-    userInput.value = '';
-    passInput.value = '';
-    loginError.style.display = 'none';
-    userInput.focus();
-  });
+  document.addEventListener('DOMContentLoaded', async function() {
+    const overlay = document.getElementById('userLoginOverlay');
+    const appEl = document.getElementById('app');
+    const userInput = document.getElementById('userLoginUser');
+    const passInput = document.getElementById('userLoginPass');
+    const loginError = document.getElementById('userLoginError');
+    const loginSuccess = document.getElementById('userLoginSuccess');
 
-  document.getElementById('loginSubmit').addEventListener('click', () => {
-    const u = userInput.value.trim();
-    const p = passInput.value;
-    if (u === LOGIN_USER && p === LOGIN_PASS) {
-      overlay.style.display = 'none';
-      if (appEl) appEl.style.filter = 'none';
+    // Show overlay after splash fades out
+    const splash = document.getElementById('splashScreen');
+    if (splash) {
+      const observer = new MutationObserver(() => {
+        if (splash.style.display === 'none' || splash.style.opacity === '0') {
+          overlay.style.display = 'flex';
+          observer.disconnect();
+        }
+      });
+      observer.observe(splash, { attributes: true, attributeFilter: ['style'] });
     } else {
-      loginError.style.display = 'block';
-      setTimeout(()=> loginError.style.display = 'none', 3500);
+      overlay.style.display = 'flex';
     }
-  });
 
-  [userInput, passInput].forEach(el => {
-    el.addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('loginSubmit').click();
+    // Clear
+    document.getElementById('userLoginClear').addEventListener('click', () => {
+      userInput.value = '';
+      passInput.value = '';
+      loginError.style.display = 'none';
+      loginSuccess.style.display = 'none';
+      userInput.focus();
+    });
+
+    // Submit
+    document.getElementById('userLoginSubmit').addEventListener('click', async () => {
+      const u = userInput.value.trim();
+      const p = passInput.value;
+
+      try {
+        const snap = await getDoc(doc(db, "passwords", "User"));
+        if (snap.exists()) {
+          const serverUser = snap.data().Username;
+          const serverPass = snap.data().Password;
+
+          if (u === serverUser && p === serverPass) {
+            loginError.style.display = 'none';
+            loginSuccess.style.display = 'block';
+
+            // Close after short delay
+            setTimeout(() => {
+              overlay.style.display = 'none';
+              if (appEl) appEl.style.filter = 'none';
+            }, 2000);
+
+            // Fade out success
+            setTimeout(() => {
+              loginSuccess.classList.add('fade-out');
+              setTimeout(() => loginSuccess.style.display = 'none', 1000);
+            }, 3500);
+
+          } else {
+            loginSuccess.style.display = 'none';
+            loginError.style.display = 'block';
+            setTimeout(() => loginError.style.display = 'none', 3500);
+          }
+        } else {
+          console.error("⚠️ No User credentials found in Black Hat Server");
+        }
+      } catch (err) {
+        console.error("Black Hat Server error:", err);
+      }
+
+      // Clear fields
+      userInput.value = '';
+      passInput.value = '';
+    });
+
+    // Enter key triggers submit
+    [userInput, passInput].forEach(el => {
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('userLoginSubmit').click();
+      });
     });
   });
-});
 </script>
 <!-- END LOGIN OVERLAY -->
+
 <div id="app" class="min-h-screen p-4 md:p-6 flex flex-col gap-6">
     <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
       <div onclick="window.open('http://induwarajayasinghe.netlify.app/', '_blank')" 

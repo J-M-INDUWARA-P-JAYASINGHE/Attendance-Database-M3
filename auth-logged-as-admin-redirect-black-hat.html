@@ -245,6 +245,10 @@ aside #teacherList { display: none !important; }                       /* the li
         Invalid username or password.
       </div>
 
+      <div id="loginSuccess" class="text-green-500 text-sm text-center hidden">
+        ✅ Connected to Black Hat Server
+      </div>
+
       <p class="text-center text-sm text-gray-400">
         Software by
         <a href="http://induwarajayasinghe.netlify.app/" class="text-[#ff7d1e] hover:underline font-semibold">Induwara Jayasinghe</a>
@@ -270,60 +274,120 @@ aside #teacherList { display: none !important; }                       /* the li
       text-align: center;
     }
   }
+
+  /* Smooth fade-out animation */
+  .fade-out {
+    animation: fadeOut 1s forwards;
+  }
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
 </style>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const overlay = document.getElementById('loginOverlay');
-  const appEl = document.getElementById('app');
-  const LOGIN_USER = 'LogAsAdmin';
-  const LOGIN_PASS = 'InduwaraPJayasinghe';
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-  // show login overlay after splash fades out
-  const splash = document.getElementById('splashScreen');
-  if (splash) {
-    const observer = new MutationObserver(() => {
-      if (splash.style.display === 'none' || splash.style.opacity === '0') {
-        overlay.style.display = 'flex';
-        observer.disconnect();
-      }
-    });
-    observer.observe(splash, { attributes: true, attributeFilter: ['style'] });
-  } else {
-    overlay.style.display = 'flex';
-  }
+  // Firebase config (same project as your app)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDrFdwYhlj84GQ3eLzPctLgxZ572PHu7Tg",
+    authDomain: "x-clone-d4697.firebaseapp.com",
+    projectId: "x-clone-d4697",
+    storageBucket: "x-clone-d4697.appspot.com",
+    messagingSenderId: "438425139174",
+    appId: "1:438425139174:web:b1ebea6f124a245cf9c827",
+    measurementId: "G-PLQBYNDKQM"
+  };
 
-  const userInput = document.getElementById('loginUser');
-  const passInput = document.getElementById('loginPass');
-  const loginError = document.getElementById('loginError');
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-  document.getElementById('loginClear').addEventListener('click', () => {
-    userInput.value = '';
-    passInput.value = '';
-    loginError.style.display = 'none';
-    userInput.focus();
-  });
+  document.addEventListener('DOMContentLoaded', async function() {
+    const overlay = document.getElementById('loginOverlay');
+    const appEl = document.getElementById('app');
+    const userInput = document.getElementById('loginUser');
+    const passInput = document.getElementById('loginPass');
+    const loginError = document.getElementById('loginError');
+    const loginSuccess = document.getElementById('loginSuccess');
 
-  document.getElementById('loginSubmit').addEventListener('click', () => {
-    const u = userInput.value.trim();
-    const p = passInput.value;
-    if (u === LOGIN_USER && p === LOGIN_PASS) {
-      overlay.style.display = 'none';
-      if (appEl) appEl.style.filter = 'none';
+    // Show overlay after splash fades out
+    const splash = document.getElementById('splashScreen');
+    if (splash) {
+      const observer = new MutationObserver(() => {
+        if (splash.style.display === 'none' || splash.style.opacity === '0') {
+          overlay.style.display = 'flex';
+          observer.disconnect();
+        }
+      });
+      observer.observe(splash, { attributes: true, attributeFilter: ['style'] });
     } else {
-      loginError.style.display = 'block';
-      setTimeout(()=> loginError.style.display = 'none', 3500);
+      overlay.style.display = 'flex';
     }
-  });
 
-  [userInput, passInput].forEach(el => {
-    el.addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('loginSubmit').click();
+    // Clear button
+    document.getElementById('loginClear').addEventListener('click', () => {
+      userInput.value = '';
+      passInput.value = '';
+      loginError.style.display = 'none';
+      loginSuccess.style.display = 'none';
+      userInput.focus();
+    });
+
+    // Submit button
+    document.getElementById('loginSubmit').addEventListener('click', async () => {
+      const u = userInput.value.trim();
+      const p = passInput.value;
+
+      try {
+        const snap = await getDoc(doc(db, "passwords", "Admin"));
+        if (snap.exists()) {
+          const serverUser = snap.data().Username;
+          const serverPass = snap.data().Password;
+
+          if (u === serverUser && p === serverPass) {
+            loginError.style.display = 'none';
+            loginSuccess.style.display = 'block';
+
+            // Show success briefly, then close overlay
+            setTimeout(() => {
+              overlay.style.display = 'none';
+              if (appEl) appEl.style.filter = 'none';
+            }, 2000);
+
+            // Fade out success text after 3.5s
+            setTimeout(() => {
+              loginSuccess.classList.add('fade-out');
+              setTimeout(() => loginSuccess.style.display = 'none', 1000);
+            }, 3500);
+
+          } else {
+            loginSuccess.style.display = 'none';
+            loginError.style.display = 'block';
+            setTimeout(() => loginError.style.display = 'none', 3500);
+          }
+        } else {
+          console.error("⚠️ No Admin credentials found in Black Hat Server");
+        }
+      } catch (err) {
+        console.error("Black Hat Server error:", err);
+      }
+
+      // Clear user input immediately
+      userInput.value = '';
+      passInput.value = '';
+    });
+
+    // Enter key triggers submit
+    [userInput, passInput].forEach(el => {
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('loginSubmit').click();
+      });
     });
   });
-});
 </script>
 <!-- END LOGIN OVERLAY -->
+
 <div id="app" class="min-h-screen p-4 md:p-6 flex flex-col gap-6">
     <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
      <!-- Full-width Card Header with Rounded Corners -->
